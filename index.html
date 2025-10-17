@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horary Astrology Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Horary Astrology Calculator</h1>
+    <form id="horary-form">
+        <label for="question">Question:</label>
+        <input type="text" id="question" name="question" required>
+        <label for="datetime">Date and Time:</label>
+        <input type="datetime-local" id="datetime" name="datetime" required>
+        <button type="submit">Calculate</button>
+    </form>
+    <div id="results"></div>
+    <script src="ephemeris.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
