@@ -1,5 +1,5 @@
 const DEFAULT_LOCATION = {
-    label: 'Odessa, Ukraine',
+    label: 'Одесса, Украина',
     lat: 46.4825,
     lon: 30.7233,
     tzOffset: 2
@@ -110,14 +110,14 @@ const ASPECTS = [
 
 const DEFAULT_SUBJECT = {
     key: 'querent',
-    label: 'Querent (you)',
+    label: 'Кверент (вы)',
     house: 1
 };
 
 const SUBJECT_RULES = [
     {
         key: 'partner',
-        label: 'Partner / spouse',
+        label: 'Партнер / супруг',
         house: 7,
         priority: 3,
         keywords: ['муж', 'жена', 'супруг', 'супруга', 'партнер', 'парень', 'девуш', 'любовник', 'бывш',
@@ -125,77 +125,77 @@ const SUBJECT_RULES = [
     },
     {
         key: 'child',
-        label: 'Child',
+        label: 'Ребенок',
         house: 5,
         priority: 3,
         keywords: ['ребен', 'дет', 'сын', 'дочь', 'беремен', 'child', 'son', 'daughter', 'pregnan']
     },
     {
         key: 'mother',
-        label: 'Mother',
+        label: 'Мать',
         house: 10,
         priority: 2,
         keywords: ['мать', 'мама', 'mother', 'mom']
     },
     {
         key: 'father',
-        label: 'Father',
+        label: 'Отец',
         house: 4,
         priority: 2,
         keywords: ['отец', 'пап', 'father', 'dad']
     },
     {
         key: 'sibling',
-        label: 'Sibling',
+        label: 'Брат/сестра',
         house: 3,
         priority: 2,
         keywords: ['брат', 'сестр', 'brother', 'sister', 'sibling']
     },
     {
         key: 'employer',
-        label: 'Employer / authority',
+        label: 'Работодатель / начальство',
         house: 10,
         priority: 2,
         keywords: ['начальник', 'работод', 'директор', 'босс', 'manager', 'boss', 'employer']
     },
     {
         key: 'colleague',
-        label: 'Colleague / coworker',
+        label: 'Коллега',
         house: 6,
         priority: 1,
         keywords: ['коллег', 'сотрудник', 'coworker', 'colleague']
     },
     {
         key: 'friend',
-        label: 'Friend',
+        label: 'Друг',
         house: 11,
         priority: 1,
         keywords: ['друг', 'подруг', 'friend']
     },
     {
         key: 'neighbor',
-        label: 'Neighbor',
+        label: 'Сосед',
         house: 3,
         priority: 1,
         keywords: ['сосед', 'neighbor']
     },
     {
         key: 'enemy_secret',
-        label: 'Secret enemy',
+        label: 'Тайный враг',
         house: 12,
         priority: 1,
         keywords: ['тайн', 'подков', 'secret enemy']
     },
     {
         key: 'enemy_open',
-        label: 'Opponent / enemy',
+        label: 'Противник / враг',
         house: 7,
         priority: 1,
         keywords: ['враг', 'оппонент', 'конкурент', 'opponent', 'enemy']
     },
     {
         key: 'pet',
-        label: 'Pet',
+        label: 'Домашнее животное',
         house: 6,
         priority: 1,
         keywords: ['животн', 'кот', 'собак', 'pet', 'dog', 'cat']
@@ -205,7 +205,7 @@ const SUBJECT_RULES = [
 const TOPIC_RULES = [
     {
         key: 'relationship',
-        label: 'Relationship / partnership',
+        label: 'Отношения / партнерство',
         house: 7,
         priority: 2,
         keywords: ['отношен', 'любов', 'брак', 'развод', 'женить', 'свадьб', 'relationship', 'marriage', 'divorc',
@@ -213,7 +213,7 @@ const TOPIC_RULES = [
     },
     {
         key: 'money',
-        label: 'Money / income',
+        label: 'Деньги / доход',
         house: 2,
         priority: 2,
         keywords: ['деньг', 'доход', 'зарплат', 'прибыл', 'финанс', 'кредит', 'долг', 'ипотек', 'salary', 'income',
@@ -221,42 +221,42 @@ const TOPIC_RULES = [
     },
     {
         key: 'property',
-        label: 'Property / home',
+        label: 'Недвижимость / дом',
         house: 4,
         priority: 2,
         keywords: ['дом', 'квартир', 'недвиж', 'земл', 'жиль', 'ипотек', 'house', 'home', 'property', 'estate']
     },
     {
         key: 'career',
-        label: 'Career / job',
+        label: 'Работа / карьера',
         house: 10,
         priority: 2,
         keywords: ['работ', 'карьер', 'должност', 'бизнес', 'job', 'career', 'position', 'company']
     },
     {
         key: 'health',
-        label: 'Health / illness',
+        label: 'Здоровье / болезнь',
         house: 6,
         priority: 2,
         keywords: ['здоров', 'болезн', 'врач', 'операц', 'health', 'illness', 'sick']
     },
     {
         key: 'children',
-        label: 'Children / pregnancy',
+        label: 'Дети / беременность',
         house: 5,
         priority: 2,
         keywords: ['дет', 'ребен', 'беремен', 'pregnan', 'child']
     },
     {
         key: 'travel_short',
-        label: 'Short travel',
+        label: 'Короткие поездки',
         house: 3,
         priority: 1,
         keywords: ['поездк', 'дорог', 'командир', 'travel', 'trip']
     },
     {
         key: 'travel_long',
-        label: 'Long travel / abroad',
+        label: 'Дальние поездки / заграница',
         house: 9,
         priority: 2,
         keywords: ['загран', 'эмигр', 'переезд', 'дальн', 'abroad', 'emigr', 'immigr', 'relocat'],
@@ -264,28 +264,28 @@ const TOPIC_RULES = [
     },
     {
         key: 'education',
-        label: 'Education / higher learning',
+        label: 'Образование / высшее обучение',
         house: 9,
         priority: 1,
         keywords: ['учеб', 'универс', 'экзам', 'образован', 'education', 'university', 'exam']
     },
     {
         key: 'friends',
-        label: 'Friends / groups',
+        label: 'Друзья / сообщества',
         house: 11,
         priority: 1,
         keywords: ['друз', 'подруг', 'friend', 'group', 'сообществ', 'команда']
     },
     {
         key: 'legal',
-        label: 'Legal / dispute',
+        label: 'Суд / конфликт',
         house: 7,
         priority: 2,
         keywords: ['суд', 'иск', 'разбират', 'юрист', 'legal', 'court', 'lawsuit']
     },
     {
         key: 'inheritance',
-        label: 'Inheritance / death',
+        label: 'Наследство / смерть',
         house: 8,
         priority: 2,
         keywords: ['наслед', 'смерт', 'страхов', 'death', 'inherit']
@@ -880,95 +880,97 @@ function renderResults(container, input, chart) {
     const subjectHouseInfo = getHouseInfo(chart, subjectInfo.house);
     const questionHouseInfo = getHouseInfo(chart, questionHouse);
     const summaryRows = [
-        ['Question', input.question || '-'],
-        ['Local time', formatLocal(input.dateUtc, input.tzOffset)],
-        ['UTC time', formatUtc(input.dateUtc)],
-        ['UTC offset', formatOffset(input.tzOffset)],
-        ['Location', input.locationName],
-        ['Location (lat, lon)', `${input.lat.toFixed(4)}, ${input.lon.toFixed(4)}`],
-        ['Julian day', chart.jd.toFixed(5)]
+        ['Вопрос', input.question || '-'],
+        ['Локальное время', formatLocal(input.dateUtc, input.tzOffset)],
+        ['UTC', formatUtc(input.dateUtc)],
+        ['Смещение UTC', formatOffset(input.tzOffset)],
+        ['Локация', input.locationName],
+        ['Координаты (lat, lon)', `${input.lat.toFixed(4)}, ${input.lon.toFixed(4)}`],
+        ['Юлианская дата', chart.jd.toFixed(5)]
     ];
-    const summary = createSection('Summary', createTable(['Field', 'Value'], summaryRows, 'kv-table'));
+    const summary = createSection('Сводка', createTable(['Поле', 'Значение'], summaryRows, 'kv-table'));
 
     const classificationRows = [
-        ['Subject', `${subjectInfo.label} (H${subjectInfo.house})`],
-        ['Subject matches', subjectInfo.matches.length ? subjectInfo.matches.join(', ') : '-'],
-        ['Topic', topicInfo ? `${topicInfo.label} (H${topicInfo.house})` : 'Not detected'],
-        ['Topic matches', topicInfo && topicInfo.matches.length ? topicInfo.matches.join(', ') : '-'],
-        ['Derived question house', `H${questionHouse}`],
-        ['Derivation', classification.derivation]
+        ['Кверент (упр. H1)', chart.significators.ascRuler],
+        ['Субъект', `${subjectInfo.label} (H${subjectInfo.house})`],
+        ['Совпадения субъекта', subjectInfo.matches.length ? subjectInfo.matches.join(', ') : '-'],
+        ['Тема', topicInfo ? `${topicInfo.label} (H${topicInfo.house})` : 'Не определено'],
+        ['Совпадения темы', topicInfo && topicInfo.matches.length ? topicInfo.matches.join(', ') : '-'],
+        ['Квизит (дом вопроса)', `H${questionHouse}`],
+        ['Квизит (упр. H' + questionHouse + ')', questionHouseInfo.ruler],
+        ['Производная формула', classification.derivation]
     ];
     const classificationSection = createSection(
-        'Classification (Frawley, derived houses)',
-        createTable(['Field', 'Value'], classificationRows, 'kv-table')
+        'Классификация (Frawley, производные дома)',
+        createTable(['Поле', 'Значение'], classificationRows, 'kv-table')
     );
 
     const derivedRows = [
-        ['Subject cusp', `H${subjectHouseInfo.house} ${formatLongitude(subjectHouseInfo.cusp)}`],
-        ['Subject sign', subjectHouseInfo.sign],
-        ['Subject ruler', subjectHouseInfo.ruler],
-        ['Question cusp', `H${questionHouseInfo.house} ${formatLongitude(questionHouseInfo.cusp)}`],
-        ['Question sign', questionHouseInfo.sign],
-        ['Question ruler', questionHouseInfo.ruler]
+        ['Куспид субъекта', `H${subjectHouseInfo.house} ${formatLongitude(subjectHouseInfo.cusp)}`],
+        ['Знак субъекта', subjectHouseInfo.sign],
+        ['Управитель субъекта', subjectHouseInfo.ruler],
+        ['Куспид квизита', `H${questionHouseInfo.house} ${formatLongitude(questionHouseInfo.cusp)}`],
+        ['Знак квизита', questionHouseInfo.sign],
+        ['Управитель квизита', questionHouseInfo.ruler]
     ];
-    const derivedSection = createSection('Derived house details', createTable(['Field', 'Value'], derivedRows, 'kv-table'));
+    const derivedSection = createSection('Детали производных домов', createTable(['Поле', 'Значение'], derivedRows, 'kv-table'));
 
     const houseRows = chart.houses.map((cusp, index) => [
         `${index + 1}`,
         formatLongitude(cusp)
     ]);
-    const housesSection = createSection('Houses (Regiomontanus)', createTable(['House', 'Cusp'], houseRows));
+    const housesSection = createSection('Дома (Regiomontanus)', createTable(['Дом', 'Куспид'], houseRows));
 
     const planetRows = chart.planets.map((planet) => [
         planet.name,
         formatLongitude(planet.longitude),
         formatLatitude(planet.latitude),
-        `House ${planet.house}`,
+        `Дом ${planet.house}`,
         planet.retrograde ? 'R' : 'D'
     ]);
-    const planetsSection = createSection('Planets', createTable(['Planet', 'Longitude', 'Latitude', 'House', 'Motion'], planetRows));
+    const planetsSection = createSection('Планеты', createTable(['Планета', 'Долгота', 'Широта', 'Дом', 'Движение'], planetRows));
 
     const significatorRows = [
-        ['Ascendant sign', chart.significators.ascSign],
-        ['Ascendant ruler', chart.significators.ascRuler],
-        ['Moon (co-significator)', 'Moon'],
-        [`Subject ruler (H${subjectHouseInfo.house})`, subjectHouseInfo.ruler],
-        [`Question ruler (H${questionHouseInfo.house})`, questionHouseInfo.ruler]
+        ['Знак Asc', chart.significators.ascSign],
+        ['Кверент (упр. H1)', chart.significators.ascRuler],
+        ['Луна (со-сигнификатор кверента)', 'Moon'],
+        [`Субъект (упр. H${subjectHouseInfo.house})`, subjectHouseInfo.ruler],
+        [`Квизит (упр. H${questionHouseInfo.house})`, questionHouseInfo.ruler]
     ];
-    const significatorsSection = createSection('Significators', createTable(['Role', 'Value'], significatorRows, 'kv-table'));
+    const significatorsSection = createSection('Сигнификаторы', createTable(['Роль', 'Значение'], significatorRows, 'kv-table'));
 
     const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
     const keyPairs = [
         {
-            labelA: 'Asc ruler',
+            labelA: 'Кверент (упр. H1)',
             planetA: chart.significators.ascRuler,
-            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            labelB: `Квизит (упр. H${questionHouseInfo.house})`,
             planetB: questionHouseInfo.ruler
         },
         {
-            labelA: 'Moon',
+            labelA: 'Луна',
             planetA: 'Moon',
-            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            labelB: `Квизит (упр. H${questionHouseInfo.house})`,
             planetB: questionHouseInfo.ruler
         }
     ];
     if (subjectHouseInfo.house !== 1) {
         keyPairs.push({
-            labelA: `Subject ruler (H${subjectHouseInfo.house})`,
+            labelA: `Субъект (упр. H${subjectHouseInfo.house})`,
             planetA: subjectHouseInfo.ruler,
-            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            labelB: `Квизит (упр. H${questionHouseInfo.house})`,
             planetB: questionHouseInfo.ruler
         });
     }
     const keyAspectRows = buildKeyAspectRows(keyPairs, planetMap);
     const keyAspectsContent = keyAspectRows.length
-        ? createTable(['Role A', 'Role B', 'Aspect', 'Orb', 'Motion'], keyAspectRows)
+        ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Движение'], keyAspectRows)
         : (() => {
             const empty = document.createElement('div');
-            empty.textContent = 'No major aspects within 5 deg orb for key significators.';
+            empty.textContent = 'Нет мажорных аспектов в орбе 5° между ключевыми сигнификаторами.';
             return empty;
         })();
-    const keyAspectsSection = createSection('Key aspects', keyAspectsContent);
+    const keyAspectsSection = createSection('Ключевые аспекты', keyAspectsContent);
 
     const aspectRows = chart.aspects.map((aspect) => [
         aspect.planetA,
@@ -977,17 +979,17 @@ function renderResults(container, input, chart) {
         `${aspect.orb.toFixed(2)} deg`
     ]);
     const aspectsContent = aspectRows.length
-        ? createTable(['Planet A', 'Planet B', 'Aspect', 'Orb'], aspectRows)
+        ? createTable(['Планета A', 'Планета B', 'Аспект', 'Орб'], aspectRows)
         : (() => {
             const empty = document.createElement('div');
-            empty.textContent = 'No major aspects within 5 deg orb.';
+            empty.textContent = 'Нет мажорных аспектов в орбе 5°.';
             return empty;
         })();
-    const aspectsSection = createSection('Aspects', aspectsContent);
+    const aspectsSection = createSection('Аспекты', aspectsContent);
 
     const note = document.createElement('div');
-    note.textContent = 'Note: Regiomontanus houses, 5 deg orb, outer planets excluded, Frawley classification with derived houses.';
-    const noteSection = createSection('Notes', note);
+    note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома, кверент/квизит.';
+    const noteSection = createSection('Примечания', note);
 
     container.appendChild(summary);
     container.appendChild(classificationSection);
@@ -1027,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
     datetimeInput.value = getDefaultDateTime(DEFAULT_LOCATION.tzOffset);
     latInput.value = formatCoordinate(DEFAULT_LOCATION.lat);
     lonInput.value = formatCoordinate(DEFAULT_LOCATION.lon);
-    locationSelected.textContent = `Selected: ${DEFAULT_LOCATION.label}`;
+    locationSelected.textContent = `Выбрано: ${DEFAULT_LOCATION.label}`;
 
     let selectedLocationName = DEFAULT_LOCATION.label;
     let isApplyingLocation = false;
@@ -1041,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setSelectedLocation = (label) => {
         selectedLocationName = label;
-        locationSelected.textContent = `Selected: ${label}`;
+        locationSelected.textContent = `Выбрано: ${label}`;
     };
 
     const applyLocation = (location, updateSearchValue) => {
@@ -1063,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!items.length) {
             const empty = document.createElement('div');
             empty.className = 'result-item';
-            empty.textContent = 'No results found.';
+            empty.textContent = 'Ничего не найдено.';
             locationResults.appendChild(empty);
             locationResults.classList.add('open');
             return;
@@ -1109,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     locationSearchInput.addEventListener('input', () => {
         const query = locationSearchInput.value.trim();
         if (!isApplyingLocation && query.length > 0) {
-            setSelectedLocation('Custom coordinates');
+            setSelectedLocation('Свои координаты');
         }
         if (searchTimer) {
             clearTimeout(searchTimer);
@@ -1145,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         locationSearchInput.value = '';
         clearLocationResults();
-        setSelectedLocation('Custom coordinates');
+        setSelectedLocation('Свои координаты');
     };
 
     latInput.addEventListener('input', markCustomLocation);
@@ -1158,25 +1160,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const lat = parseFloat(latInput.value);
         const lon = parseFloat(lonInput.value);
         if (!Number.isFinite(tzOffset) || tzOffset < -14 || tzOffset > 14) {
-            renderError(resultsDiv, 'Invalid UTC offset. Use a value between -14 and +14.');
+            renderError(resultsDiv, 'Некорректное смещение UTC. Допустимо от -14 до +14.');
             return;
         }
         if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-            renderError(resultsDiv, 'Invalid latitude. Use a value between -90 and 90.');
+            renderError(resultsDiv, 'Некорректная широта. Допустимо от -90 до 90.');
             return;
         }
         if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
-            renderError(resultsDiv, 'Invalid longitude. Use a value between -180 and 180.');
+            renderError(resultsDiv, 'Некорректная долгота. Допустимо от -180 до 180.');
             return;
         }
         const dateUtc = parseDateTimeLocal(datetimeInput.value, tzOffset);
         if (!dateUtc) {
-            renderError(resultsDiv, 'Invalid date/time.');
+            renderError(resultsDiv, 'Некорректная дата/время.');
             return;
         }
         const chart = calculateHorary(dateUtc, { lat, lon });
-        const locationName = selectedLocationName === 'Custom coordinates'
-            ? 'Custom coordinates'
+        const locationName = selectedLocationName === 'Свои координаты'
+            ? 'Свои координаты'
             : (locationSearchInput.value.trim() || selectedLocationName);
         const classification = classifyQuestion(question);
         renderResults(resultsDiv, { question, classification, dateUtc, tzOffset, lat, lon, locationName }, chart);

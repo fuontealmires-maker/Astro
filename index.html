@@ -8,46 +8,46 @@
 </head>
 <body>
     <main class="container">
-        <h1>Horary Astrology Calculator</h1>
-        <p class="note">Default: Odessa, Ukraine (46.4825, 30.7233), UTC+2.</p>
+        <h1>Хорарный астропроцессор</h1>
+        <p class="note">По умолчанию: Одесса, Украина (46.4825, 30.7233), UTC+2.</p>
         <form id="horary-form">
             <div class="field">
-                <label for="question">Question</label>
+                <label for="question">Вопрос</label>
                 <input type="text" id="question" name="question" required>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="datetime">Date and time (local)</label>
+                    <label for="datetime">Дата и время (локальные)</label>
                     <input type="datetime-local" id="datetime" name="datetime" required>
                 </div>
                 <div class="field">
-                    <label for="tz-offset">UTC offset (hours)</label>
+                    <label for="tz-offset">Смещение UTC (часы)</label>
                     <input type="number" id="tz-offset" name="tz-offset" step="0.25" min="-14" max="14" required>
                 </div>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="location-search">Location search</label>
-                    <input type="search" id="location-search" name="location-search" placeholder="City, country" autocomplete="off">
-                    <div id="location-selected" class="helper">Selected: Odessa, Ukraine</div>
-                    <div id="location-results" class="search-results" role="listbox" aria-label="Location search results"></div>
+                    <label for="location-search">Поиск места</label>
+                    <input type="search" id="location-search" name="location-search" placeholder="Город, страна" autocomplete="off">
+                    <div id="location-selected" class="helper">Выбрано: Одесса, Украина</div>
+                    <div id="location-results" class="search-results" role="listbox" aria-label="Результаты поиска"></div>
                 </div>
                 <div class="field">
-                    <label>Quick action</label>
-                    <button type="button" id="use-default-location" class="secondary">Use Odessa</button>
+                    <label>Быстрое действие</label>
+                    <button type="button" id="use-default-location" class="secondary">Использовать Одессу</button>
                 </div>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label for="latitude">Latitude (deg)</label>
+                    <label for="latitude">Широта (°)</label>
                     <input type="number" id="latitude" name="latitude" step="0.0001" min="-90" max="90" required>
                 </div>
                 <div class="field">
-                    <label for="longitude">Longitude (deg, east +)</label>
+                    <label for="longitude">Долгота (°; восток +)</label>
                     <input type="number" id="longitude" name="longitude" step="0.0001" min="-180" max="180" required>
                 </div>
             </div>
-            <button type="submit">Calculate</button>
+            <button type="submit">Рассчитать</button>
         </form>
         <div id="results" class="results"></div>
     </main>
