@@ -15,14 +15,23 @@
                 <label for="question">Question</label>
                 <input type="text" id="question" name="question" required>
             </div>
-            <div class="field">
-                <label for="datetime">Date and time (local)</label>
-                <input type="datetime-local" id="datetime" name="datetime" required>
-            </div>
             <div class="field-row">
+                <div class="field">
+                    <label for="datetime">Date and time (local)</label>
+                    <input type="datetime-local" id="datetime" name="datetime" required>
+                </div>
                 <div class="field">
                     <label for="tz-offset">UTC offset (hours)</label>
                     <input type="number" id="tz-offset" name="tz-offset" step="0.25" min="-14" max="14" required>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="location-select">Location</label>
+                    <select id="location-select" name="location-select" required>
+                        <option value="odessa">Odessa, Ukraine</option>
+                        <option value="custom">Custom</option>
+                    </select>
                 </div>
                 <div class="field">
                     <label for="latitude">Latitude (deg)</label>

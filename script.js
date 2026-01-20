@@ -1,8 +1,13 @@
-const DEFAULTS = {
-    lat: 46.4825,
-    lon: 30.7233,
-    tzOffset: 2
+const LOCATIONS = {
+    odessa: {
+        label: 'Odessa, Ukraine',
+        lat: 46.4825,
+        lon: 30.7233,
+        tzOffset: 2
+    }
 };
+
+const DEFAULT_LOCATION_KEY = 'odessa';
 
 const PLANETS = [
     { key: 'sun', name: 'Sun' },
@@ -11,13 +16,8 @@ const PLANETS = [
     { key: 'venus', name: 'Venus' },
     { key: 'mars', name: 'Mars' },
     { key: 'jupiter', name: 'Jupiter' },
-    { key: 'saturn', name: 'Saturn' },
-    { key: 'uranus', name: 'Uranus' },
-    { key: 'neptune', name: 'Neptune' },
-    { key: 'pluto', name: 'Pluto' }
+    { key: 'saturn', name: 'Saturn' }
 ];
-
-const LUMINARIES = new Set(['Sun', 'Moon']);
 
 const SIGNS = [
     'Aries',
@@ -126,11 +126,11 @@ const ORBITAL_ELEMENTS = {
 };
 
 const ASPECTS = [
-    { name: 'Conjunction', angle: 0, orb: 8 },
-    { name: 'Opposition', angle: 180, orb: 8 },
-    { name: 'Trine', angle: 120, orb: 6 },
-    { name: 'Square', angle: 90, orb: 6 },
-    { name: 'Sextile', angle: 60, orb: 4 }
+    { name: 'Conjunction', angle: 0, orb: 5 },
+    { name: 'Opposition', angle: 180, orb: 5 },
+    { name: 'Trine', angle: 120, orb: 5 },
+    { name: 'Square', angle: 90, orb: 5 },
+    { name: 'Sextile', angle: 60, orb: 5 }
 ];
 
 function pad2(value) {
@@ -312,7 +312,7 @@ function computePlanetPositions(jd) {
         sun: sunFromEarth(earthHelio),
         moon: moonPosition(jd)
     };
-    ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].forEach((key) => {
+    ['mercury', 'venus', 'mars', 'jupiter', 'saturn'].forEach((key) => {
         const helio = heliocentricCoordinates(elementsAt(key, d0));
         positions[key] = geocentricFromHelio(helio, earthHelio);
     });
@@ -339,6 +339,10 @@ function cross(a, b) {
     };
 }
 
+function dot(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 function normalizeVector(v) {
     const length = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     return {
@@ -346,14 +350,6 @@ function normalizeVector(v) {
         y: v.y / length,
         z: v.z / length
     };
-}
-
-function hourAngle(lstDeg, raDeg) {
-    let h = normalizeDegrees(lstDeg - raDeg);
-    if (h > 180) {
-        h -= 360;
-    }
-    return h;
 }
 
 function equatorialToEcliptic(v, epsRad) {
@@ -364,55 +360,55 @@ function equatorialToEcliptic(v, epsRad) {
     };
 }
 
-function chooseEastIntersection(v1, v2, lstDeg) {
-    const ra1 = normalizeDegrees(radToDeg(Math.atan2(v1.y, v1.x)));
-    const ra2 = normalizeDegrees(radToDeg(Math.atan2(v2.y, v2.x)));
-    const h1 = hourAngle(lstDeg, ra1);
-    const h2 = hourAngle(lstDeg, ra2);
-    if (h1 < 0 && h2 >= 0) {
-        return v1;
-    }
-    if (h2 < 0 && h1 >= 0) {
-        return v2;
-    }
-    return Math.abs(h1) <= Math.abs(h2) ? v1 : v2;
+function vectorFromRaDec(raDeg, decDeg) {
+    const raRad = degToRad(raDeg);
+    const decRad = degToRad(decDeg);
+    const cosDec = Math.cos(decRad);
+    return {
+        x: cosDec * Math.cos(raRad),
+        y: cosDec * Math.sin(raRad),
+        z: Math.sin(decRad)
+    };
 }
 
-function ascendantLongitude(jd, lat, lon) {
-    const lst = localSiderealTime(jd, lon);
-    const eps = meanObliquity(jd);
-    const theta = degToRad(lst);
-    const phi = degToRad(lat);
-    const epsRad = degToRad(eps);
+function northPointVector(latDeg, lstDeg) {
+    const phi = degToRad(latDeg);
+    const theta = degToRad(lstDeg);
     const zenith = {
         x: Math.cos(phi) * Math.cos(theta),
         y: Math.cos(phi) * Math.sin(theta),
         z: Math.sin(phi)
     };
+    const pole = { x: 0, y: 0, z: 1 };
+    const meridianNormal = cross(zenith, pole);
+    let north = cross(zenith, meridianNormal);
+    if (north.z < 0) {
+        north = { x: -north.x, y: -north.y, z: -north.z };
+    }
+    return normalizeVector(north);
+}
+
+function regiomontanusHouses(jd, lat, lon) {
+    const lst = localSiderealTime(jd, lon);
+    const epsRad = degToRad(meanObliquity(jd));
+    const north = northPointVector(lat, lst);
     const eclPole = {
         x: 0,
         y: -Math.sin(epsRad),
         z: Math.cos(epsRad)
     };
-    const line = cross(eclPole, zenith);
-    const v1 = normalizeVector(line);
-    const v2 = { x: -v1.x, y: -v1.y, z: -v1.z };
-    const ascVector = chooseEastIntersection(v1, v2, lst);
-    const ecl = equatorialToEcliptic(ascVector, epsRad);
-    return normalizeDegrees(radToDeg(Math.atan2(ecl.y, ecl.x)));
-}
-
-function midheavenLongitude(jd, lon) {
-    const lst = localSiderealTime(jd, lon);
-    const eps = meanObliquity(jd);
-    const theta = degToRad(lst);
-    const epsRad = degToRad(eps);
-    const mc = radToDeg(Math.atan2(Math.sin(theta), Math.cos(theta) * Math.cos(epsRad)));
-    return normalizeDegrees(mc);
-}
-
-function equalHouses(ascendant) {
-    return Array.from({ length: 12 }, (_, i) => normalizeDegrees(ascendant + i * 30));
+    const houseAngles = [90, 120, 150, 180, 210, 240, 270, 300, 330, 0, 30, 60];
+    return houseAngles.map((angle) => {
+        const ra = normalizeDegrees(lst + angle);
+        const reference = vectorFromRaDec(ra, 0);
+        const planeNormal = cross(north, reference);
+        let intersection = normalizeVector(cross(planeNormal, eclPole));
+        if (dot(intersection, reference) < 0) {
+            intersection = { x: -intersection.x, y: -intersection.y, z: -intersection.z };
+        }
+        const ecl = equatorialToEcliptic(intersection, epsRad);
+        return normalizeDegrees(radToDeg(Math.atan2(ecl.y, ecl.x)));
+    });
 }
 
 function longitudeToSign(lon) {
@@ -422,6 +418,23 @@ function longitudeToSign(lon) {
         sign: SIGNS[index],
         deg: normalized - index * 30
     };
+}
+
+function isBetweenZodiac(start, end, value) {
+    const span = normalizeDegrees(end - start);
+    const rel = normalizeDegrees(value - start);
+    return rel >= 0 && rel < span;
+}
+
+function houseIndexForLongitude(lon, cusps) {
+    for (let i = 0; i < cusps.length; i += 1) {
+        const start = cusps[i];
+        const end = cusps[(i + 1) % cusps.length];
+        if (isBetweenZodiac(start, end, lon)) {
+            return i + 1;
+        }
+    }
+    return 12;
 }
 
 function formatLongitude(lon) {
@@ -472,13 +485,6 @@ function createSection(title, content) {
     return section;
 }
 
-function aspectOrb(baseOrb, planetA, planetB) {
-    if (LUMINARIES.has(planetA) || LUMINARIES.has(planetB)) {
-        return baseOrb + 2;
-    }
-    return baseOrb;
-}
-
 function calculateAspects(planets) {
     const aspects = [];
     for (let i = 0; i < planets.length; i += 1) {
@@ -489,9 +495,8 @@ function calculateAspects(planets) {
             const angle = diff > 180 ? 360 - diff : diff;
             let bestMatch = null;
             ASPECTS.forEach((aspect) => {
-                const orb = aspectOrb(aspect.orb, a.name, b.name);
                 const delta = Math.abs(angle - aspect.angle);
-                if (delta <= orb && (!bestMatch || delta < bestMatch.orb)) {
+                if (delta <= aspect.orb && (!bestMatch || delta < bestMatch.orb)) {
                     bestMatch = { type: aspect.name, orb: delta };
                 }
             });
@@ -511,16 +516,16 @@ function calculateAspects(planets) {
 
 function calculateHorary(dateUtc, location) {
     const jd = julianDay(dateUtc);
-    const asc = ascendantLongitude(jd, location.lat, location.lon);
-    const mc = midheavenLongitude(jd, location.lon);
-    const houses = equalHouses(asc);
+    const houses = regiomontanusHouses(jd, location.lat, location.lon);
+    const asc = houses[0];
+    const mc = houses[9];
     const positionsNow = computePlanetPositions(jd);
     const positionsFuture = computePlanetPositions(jd + 0.5);
     const planets = PLANETS.map((planet) => {
         const current = positionsNow[planet.key];
         const future = positionsFuture[planet.key];
         const delta = signedAngleDiff(current.lon, future.lon);
-        const house = Math.floor(normalizeDegrees(current.lon - asc) / 30) + 1;
+        const house = houseIndexForLongitude(current.lon, houses);
         return {
             name: planet.name,
             longitude: current.lon,
@@ -555,6 +560,7 @@ function renderResults(container, input, chart) {
         ['Local time', formatLocal(input.dateUtc, input.tzOffset)],
         ['UTC time', formatUtc(input.dateUtc)],
         ['UTC offset', formatOffset(input.tzOffset)],
+        ['Location', input.locationName],
         ['Location (lat, lon)', `${input.lat.toFixed(4)}, ${input.lon.toFixed(4)}`],
         ['Julian day', chart.jd.toFixed(5)]
     ];
@@ -564,7 +570,7 @@ function renderResults(container, input, chart) {
         `${index + 1}`,
         formatLongitude(cusp)
     ]);
-    const housesSection = createSection('Houses (Equal)', createTable(['House', 'Cusp'], houseRows));
+    const housesSection = createSection('Houses (Regiomontanus)', createTable(['House', 'Cusp'], houseRows));
 
     const planetRows = chart.planets.map((planet) => [
         planet.name,
@@ -594,13 +600,13 @@ function renderResults(container, input, chart) {
         ? createTable(['Planet A', 'Planet B', 'Aspect', 'Orb'], aspectRows)
         : (() => {
             const empty = document.createElement('div');
-            empty.textContent = 'No major aspects within default orbs.';
+            empty.textContent = 'No major aspects within 5 deg orb.';
             return empty;
         })();
     const aspectsSection = createSection('Aspects', aspectsContent);
 
     const note = document.createElement('div');
-    note.textContent = 'Note: Positions use low-precision analytical ephemerides for horary use.';
+    note.textContent = 'Note: Regiomontanus houses, 5 deg orb, outer planets excluded.';
     const noteSection = createSection('Notes', note);
 
     container.appendChild(summary);
@@ -627,13 +633,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsDiv = document.getElementById('results');
     const datetimeInput = document.getElementById('datetime');
     const tzInput = document.getElementById('tz-offset');
+    const locationSelect = document.getElementById('location-select');
     const latInput = document.getElementById('latitude');
     const lonInput = document.getElementById('longitude');
 
-    tzInput.value = DEFAULTS.tzOffset;
-    latInput.value = DEFAULTS.lat;
-    lonInput.value = DEFAULTS.lon;
-    datetimeInput.value = getDefaultDateTime(DEFAULTS.tzOffset);
+    const defaultLocation = LOCATIONS[DEFAULT_LOCATION_KEY];
+    tzInput.value = defaultLocation.tzOffset;
+    datetimeInput.value = getDefaultDateTime(defaultLocation.tzOffset);
+    locationSelect.value = DEFAULT_LOCATION_KEY;
+
+    const applyLocationSelection = () => {
+        const key = locationSelect.value;
+        const preset = LOCATIONS[key];
+        const isCustom = key === 'custom';
+        if (preset) {
+            latInput.value = preset.lat;
+            lonInput.value = preset.lon;
+        }
+        latInput.disabled = !isCustom;
+        lonInput.disabled = !isCustom;
+    };
+
+    applyLocationSelection();
+
+    locationSelect.addEventListener('change', () => {
+        applyLocationSelection();
+    });
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -641,6 +666,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const tzOffset = parseFloat(tzInput.value);
         const lat = parseFloat(latInput.value);
         const lon = parseFloat(lonInput.value);
+        const locationKey = locationSelect.value;
+        const preset = LOCATIONS[locationKey];
+        const locationName = preset ? preset.label : 'Custom';
+        if (!preset && locationKey !== 'custom') {
+            renderError(resultsDiv, 'Invalid location selection.');
+            return;
+        }
         if (!Number.isFinite(tzOffset) || tzOffset < -14 || tzOffset > 14) {
             renderError(resultsDiv, 'Invalid UTC offset. Use a value between -14 and +14.');
             return;
@@ -659,6 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const chart = calculateHorary(dateUtc, { lat, lon });
-        renderResults(resultsDiv, { question, dateUtc, tzOffset, lat, lon }, chart);
+        renderResults(resultsDiv, { question, dateUtc, tzOffset, lat, lon, locationName }, chart);
     });
 });

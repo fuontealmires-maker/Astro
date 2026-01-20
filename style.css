@@ -49,11 +49,18 @@ label {
     font-weight: 600;
 }
 
-input {
+input,
+select {
     padding: 8px 10px;
     border-radius: 6px;
     border: 1px solid #cbd5e1;
     font-size: 1rem;
+}
+
+input:disabled,
+select:disabled {
+    background: #f1f5f9;
+    color: #6b7280;
 }
 
 button {
