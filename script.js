@@ -108,6 +108,46 @@ const ASPECTS = [
     { name: 'Sextile', angle: 60, orb: 5 }
 ];
 
+const DOMICILES = {
+    Sun: ['Leo'],
+    Moon: ['Cancer'],
+    Mercury: ['Gemini', 'Virgo'],
+    Venus: ['Taurus', 'Libra'],
+    Mars: ['Aries', 'Scorpio'],
+    Jupiter: ['Sagittarius', 'Pisces'],
+    Saturn: ['Capricorn', 'Aquarius']
+};
+
+const EXALTATIONS = {
+    Sun: 'Aries',
+    Moon: 'Taurus',
+    Mercury: 'Virgo',
+    Venus: 'Pisces',
+    Mars: 'Capricorn',
+    Jupiter: 'Cancer',
+    Saturn: 'Libra'
+};
+
+const SIGN_OPPOSITES = {
+    Aries: 'Libra',
+    Taurus: 'Scorpio',
+    Gemini: 'Sagittarius',
+    Cancer: 'Capricorn',
+    Leo: 'Aquarius',
+    Virgo: 'Pisces',
+    Libra: 'Aries',
+    Scorpio: 'Taurus',
+    Sagittarius: 'Gemini',
+    Capricorn: 'Cancer',
+    Aquarius: 'Leo',
+    Pisces: 'Virgo'
+};
+
+const STATIONARY_THRESHOLD = 0.1;
+const CAZIMI_ORB = 17 / 60;
+const COMBUST_ORB = 8.5;
+const UNDER_BEAMS_ORB = 17;
+
 const DEFAULT_SUBJECT = {
     key: 'querent',
     label: 'Кверент (вы)',
@@ -391,6 +431,98 @@ function formatLocal(date, offsetHours) {
     const localDate = new Date(localMillis);
     return `${localDate.getUTCFullYear()}-${pad2(localDate.getUTCMonth() + 1)}-${pad2(localDate.getUTCDate())} ` +
         `${pad2(localDate.getUTCHours())}:${pad2(localDate.getUTCMinutes())}`;
+}
+
+function formatDegrees(value) {
+    return `${value.toFixed(2)}°`;
+}
+
+function formatSignedDegrees(value) {
+    const sign = value >= 0 ? '+' : '-';
+    return `${sign}${Math.abs(value).toFixed(2)}°`;
+}
+
+function oppositeSign(sign) {
+    return SIGN_OPPOSITES[sign];
+}
+
+function getHouseStrength(house) {
+    if ([1, 4, 7, 10].includes(house)) {
+        return 'Угловая';
+    }
+    if ([2, 5, 8, 11].includes(house)) {
+        return 'Сукцедентная';
+    }
+    return 'Падающая';
+}
+
+function getEssentialDignity(planetName, lon) {
+    const sign = longitudeToSign(lon).sign;
+    const domiciles = DOMICILES[planetName] || [];
+    const exaltation = EXALTATIONS[planetName] || null;
+    if (domiciles.includes(sign)) {
+        return { status: 'Обитель', sign };
+    }
+    if (exaltation === sign) {
+        return { status: 'Экзальтация', sign };
+    }
+    if (domiciles.some((domicile) => oppositeSign(domicile) === sign)) {
+        return { status: 'Изгнание', sign };
+    }
+    if (exaltation && oppositeSign(exaltation) === sign) {
+        return { status: 'Падение', sign };
+    }
+    return { status: 'Без достоинств', sign };
+}
+
+function getReceptionType(sign, planetName) {
+    const domiciles = DOMICILES[planetName] || [];
+    const exaltation = EXALTATIONS[planetName] || null;
+    if (domiciles.includes(sign)) {
+        return 'Обитель';
+    }
+    if (exaltation === sign) {
+        return 'Экзальтация';
+    }
+    if (domiciles.some((domicile) => oppositeSign(domicile) === sign)) {
+        return 'Изгнание';
+    }
+    if (exaltation && oppositeSign(exaltation) === sign) {
+        return 'Падение';
+    }
+    return 'Нет';
+}
+
+function angularDistance(a, b) {
+    const diff = normalizeDegrees(a - b);
+    return diff > 180 ? 360 - diff : diff;
+}
+
+function getSunCondition(planetName, planetLon, sunLon) {
+    if (planetName === 'Sun') {
+        return '—';
+    }
+    const distance = angularDistance(planetLon, sunLon);
+    if (distance <= CAZIMI_ORB) {
+        return 'Казими';
+    }
+    if (distance <= COMBUST_ORB) {
+        return 'Сожжение';
+    }
+    if (distance <= UNDER_BEAMS_ORB) {
+        return 'В лучах';
+    }
+    return 'Свободна';
+}
+
+function getMotionStatus(dailyMotion) {
+    if (Math.abs(dailyMotion) <= STATIONARY_THRESHOLD) {
+        return { label: 'Стационарная', short: 'С' };
+    }
+    if (dailyMotion < 0) {
+        return { label: 'Ретроградная', short: 'Р' };
+    }
+    return { label: 'Директная', short: 'Д' };
 }
 
 function julianDay(date) {
@@ -730,8 +862,8 @@ function buildKeyAspectRows(pairs, planetMap) {
             pair.labelA,
             pair.labelB,
             aspect.name,
-            `${aspect.orb.toFixed(2)} deg`,
-            motion
+            formatDegrees(aspect.orb),
+            motion === 'Applying' ? 'Сходящийся' : 'Расходящийся'
         ]);
     });
     return rows;
@@ -756,12 +888,12 @@ function houseIndexForLongitude(lon, cusps) {
 
 function formatLongitude(lon) {
     const data = longitudeToSign(lon);
-    return `${data.sign} ${data.deg.toFixed(2)} deg`;
+    return `${data.sign} ${formatDegrees(data.deg)}`;
 }
 
 function formatLatitude(lat) {
     const sign = lat >= 0 ? '+' : '-';
-    return `${sign}${Math.abs(lat).toFixed(2)} deg`;
+    return `${sign}${formatDegrees(Math.abs(lat))}`;
 }
 
 function createTable(headers, rows, className) {
@@ -842,13 +974,17 @@ function calculateHorary(dateUtc, location) {
         const current = positionsNow[planet.key];
         const future = positionsFuture[planet.key];
         const delta = signedAngleDiff(current.lon, future.lon);
+        const dailyMotion = delta * 2;
+        const motionStatus = getMotionStatus(dailyMotion);
         const house = houseIndexForLongitude(current.lon, houses);
         return {
             name: planet.name,
             longitude: current.lon,
             futureLongitude: future.lon,
             latitude: current.lat,
-            retrograde: delta < 0,
+            retrograde: dailyMotion < 0,
+            dailyMotion,
+            motionStatus,
             house
         };
     });
@@ -926,9 +1062,46 @@ function renderResults(container, input, chart) {
         formatLongitude(planet.longitude),
         formatLatitude(planet.latitude),
         `Дом ${planet.house}`,
-        planet.retrograde ? 'R' : 'D'
+        planet.motionStatus.short
     ]);
     const planetsSection = createSection('Планеты', createTable(['Планета', 'Долгота', 'Широта', 'Дом', 'Движение'], planetRows));
+
+    const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
+    const sunLon = planetMap.get('Sun') ? planetMap.get('Sun').longitude : null;
+    const dignityRows = chart.planets.map((planet) => {
+        const essential = getEssentialDignity(planet.name, planet.longitude);
+        const houseStrength = getHouseStrength(planet.house);
+        const sunCondition = sunLon !== null ? getSunCondition(planet.name, planet.longitude, sunLon) : '—';
+        const debilities = [];
+        if (planet.motionStatus.label === 'Ретроградная') {
+            debilities.push('Ретроградность');
+        }
+        if (planet.motionStatus.label === 'Стационарная') {
+            debilities.push('Стационарность');
+        }
+        if (sunCondition === 'Сожжение') {
+            debilities.push('Сожжение');
+        } else if (sunCondition === 'В лучах') {
+            debilities.push('В лучах');
+        }
+        const afflictionText = debilities.length ? debilities.join(', ') : '—';
+        return [
+            planet.name,
+            essential.status,
+            houseStrength,
+            planet.motionStatus.label,
+            `${formatSignedDegrees(planet.dailyMotion)}/день`,
+            sunCondition,
+            afflictionText
+        ];
+    });
+    const dignitySection = createSection(
+        'Достоинства и поражения',
+        createTable(
+            ['Планета', 'Эссенц.', 'Акцидент.', 'Движение', 'Скорость', 'Солнце', 'Поражения'],
+            dignityRows
+        )
+    );
 
     const significatorRows = [
         ['Знак Asc', chart.significators.ascSign],
@@ -939,7 +1112,6 @@ function renderResults(container, input, chart) {
     ];
     const significatorsSection = createSection('Сигнификаторы', createTable(['Роль', 'Значение'], significatorRows, 'kv-table'));
 
-    const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
     const keyPairs = [
         {
             labelA: 'Кверент (упр. H1)',
@@ -962,6 +1134,35 @@ function renderResults(container, input, chart) {
             planetB: questionHouseInfo.ruler
         });
     }
+    const receptionRows = [];
+    keyPairs.forEach((pair) => {
+        const planetA = planetMap.get(pair.planetA);
+        const planetB = planetMap.get(pair.planetB);
+        if (!planetA || !planetB) {
+            return;
+        }
+        const signA = longitudeToSign(planetA.longitude).sign;
+        const signB = longitudeToSign(planetB.longitude).sign;
+        const typeAB = getReceptionType(signA, planetB.name);
+        const typeBA = getReceptionType(signB, planetA.name);
+        receptionRows.push([`${pair.labelA} (${planetA.name})`, `${pair.labelB} (${planetB.name})`, typeAB]);
+        receptionRows.push([`${pair.labelB} (${planetB.name})`, `${pair.labelA} (${planetA.name})`, typeBA]);
+        if (['Обитель', 'Экзальтация'].includes(typeAB) && ['Обитель', 'Экзальтация'].includes(typeBA)) {
+            receptionRows.push([
+                `${pair.labelA} ↔ ${pair.labelB}`,
+                'Взаимная рецепция',
+                `${typeAB} / ${typeBA}`
+            ]);
+        }
+    });
+    const receptionsContent = receptionRows.length
+        ? createTable(['От', 'К', 'Рецепция'], receptionRows)
+        : (() => {
+            const empty = document.createElement('div');
+            empty.textContent = 'Нет данных для рецепций.';
+            return empty;
+        })();
+    const receptionsSection = createSection('Рецепции', receptionsContent);
     const keyAspectRows = buildKeyAspectRows(keyPairs, planetMap);
     const keyAspectsContent = keyAspectRows.length
         ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Движение'], keyAspectRows)
@@ -976,7 +1177,7 @@ function renderResults(container, input, chart) {
         aspect.planetA,
         aspect.planetB,
         aspect.type,
-        `${aspect.orb.toFixed(2)} deg`
+        formatDegrees(aspect.orb)
     ]);
     const aspectsContent = aspectRows.length
         ? createTable(['Планета A', 'Планета B', 'Аспект', 'Орб'], aspectRows)
@@ -988,7 +1189,10 @@ function renderResults(container, input, chart) {
     const aspectsSection = createSection('Аспекты', aspectsContent);
 
     const note = document.createElement('div');
-    note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома, кверент/квизит.';
+    note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома. ' +
+        'Эссенциальные: обитель/экзальтация/изгнание/падение, без термов и фасов. ' +
+        `Сожжение до ${COMBUST_ORB}°, в лучах до ${UNDER_BEAMS_ORB}°, казими до ${CAZIMI_ORB.toFixed(2)}°. ` +
+        `Стационарность при |скорости| ≤ ${STATIONARY_THRESHOLD}°/день.`;
     const noteSection = createSection('Примечания', note);
 
     container.appendChild(summary);
@@ -996,7 +1200,9 @@ function renderResults(container, input, chart) {
     container.appendChild(derivedSection);
     container.appendChild(housesSection);
     container.appendChild(planetsSection);
+    container.appendChild(dignitySection);
     container.appendChild(significatorsSection);
+    container.appendChild(receptionsSection);
     container.appendChild(keyAspectsSection);
     container.appendChild(aspectsSection);
     container.appendChild(noteSection);
