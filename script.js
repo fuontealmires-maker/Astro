@@ -578,6 +578,34 @@ function getAspectPolarityLabel(symbol) {
     return 'Нейтральный';
 }
 
+function summarizePolarity(symbols) {
+    const summary = {
+        plus: 0,
+        minus: 0,
+        neutral: 0,
+        total: symbols.length
+    };
+    symbols.forEach((symbol) => {
+        if (symbol === '+') {
+            summary.plus += 1;
+        } else if (symbol === '-') {
+            summary.minus += 1;
+        } else {
+            summary.neutral += 1;
+        }
+    });
+    if (summary.plus > summary.minus) {
+        summary.verdict = 'Преобладают положительные (+)';
+    } else if (summary.minus > summary.plus) {
+        summary.verdict = 'Преобладают отрицательные (-)';
+    } else if (summary.total === 0) {
+        summary.verdict = 'Аспекты отсутствуют';
+    } else {
+        summary.verdict = 'Баланс + и -';
+    }
+    return summary;
+}
+
 function oppositeSign(sign) {
     return SIGN_OPPOSITES[sign];
 }
@@ -1017,6 +1045,7 @@ function orbToAspect(lonA, lonB, aspectAngle) {
 
 function buildKeyAspectRows(pairs, planetMap) {
     const rows = [];
+    const polaritySymbols = [];
     pairs.forEach((pair) => {
         if (pair.planetA === pair.planetB) {
             return;
@@ -1034,6 +1063,7 @@ function buildKeyAspectRows(pairs, planetMap) {
         const motion = futureOrb < aspect.orb ? 'Applying' : 'Separating';
         const polaritySymbol = getAspectPolarity(aspect.name);
         const polarityLabel = getAspectPolarityLabel(polaritySymbol);
+        polaritySymbols.push(polaritySymbol);
         rows.push([
             pair.labelA,
             pair.labelB,
@@ -1043,7 +1073,10 @@ function buildKeyAspectRows(pairs, planetMap) {
             `${polaritySymbol} (${polarityLabel})`
         ]);
     });
-    return rows;
+    return {
+        rows,
+        summary: summarizePolarity(polaritySymbols)
+    };
 }
 
 function buildAllReceptionRows(planets) {
@@ -1357,15 +1390,22 @@ function renderResults(container, input, chart) {
             return empty;
         })();
     const receptionsSection = createSection('Все рецепции', receptionsContent);
-    const keyAspectRows = buildKeyAspectRows(keyPairs, planetMap);
-    const keyAspectsContent = keyAspectRows.length
-        ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Фаза', 'Знак'], keyAspectRows)
+    const keyAspectData = buildKeyAspectRows(keyPairs, planetMap);
+    const keyAspectsContent = keyAspectData.rows.length
+        ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Фаза', 'Знак'], keyAspectData.rows)
         : (() => {
             const empty = document.createElement('div');
             empty.textContent = 'Нет мажорных аспектов в орбе 5° между ключевыми сигнификаторами.';
             return empty;
         })();
     const keyAspectsSection = createSection('Ключевые аспекты', keyAspectsContent);
+    const keyPolarityRows = [
+        ['Плюс (+)', `${keyAspectData.summary.plus}`],
+        ['Минус (-)', `${keyAspectData.summary.minus}`],
+        ['Нейтральные (0)', `${keyAspectData.summary.neutral}`],
+        ['Итог', keyAspectData.summary.verdict]
+    ];
+    const keyPolaritySection = createSection('Баланс ключевых аспектов', createTable(['Поле', 'Значение'], keyPolarityRows, 'kv-table'));
 
     const aspectRows = chart.aspects.map((aspect) => [
         aspect.planetA,
@@ -1383,6 +1423,14 @@ function renderResults(container, input, chart) {
             return empty;
         })();
     const aspectsSection = createSection('Аспекты', aspectsContent);
+    const allPolaritySummary = summarizePolarity(chart.aspects.map((aspect) => aspect.polarity));
+    const allPolarityRows = [
+        ['Плюс (+)', `${allPolaritySummary.plus}`],
+        ['Минус (-)', `${allPolaritySummary.minus}`],
+        ['Нейтральные (0)', `${allPolaritySummary.neutral}`],
+        ['Итог', allPolaritySummary.verdict]
+    ];
+    const allPolaritySection = createSection('Баланс всех аспектов', createTable(['Поле', 'Значение'], allPolarityRows, 'kv-table'));
 
     const note = document.createElement('div');
     note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома. ' +
@@ -1401,7 +1449,9 @@ function renderResults(container, input, chart) {
     container.appendChild(significatorsSection);
     container.appendChild(receptionsSection);
     container.appendChild(keyAspectsSection);
+    container.appendChild(keyPolaritySection);
     container.appendChild(aspectsSection);
+    container.appendChild(allPolaritySection);
     container.appendChild(noteSection);
 }
 
