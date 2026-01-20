@@ -108,6 +108,21 @@ const ASPECTS = [
     { name: 'Sextile', angle: 60, orb: 5 }
 ];
 
+const QUESTION_TYPES = [
+    { key: 'general', label: 'General / unspecified', house: null },
+    { key: 'relationship', label: 'Relationships / partner', house: 7 },
+    { key: 'career', label: 'Career / job', house: 10 },
+    { key: 'money', label: 'Money / income', house: 2 },
+    { key: 'property', label: 'Property / home', house: 4 },
+    { key: 'health', label: 'Health / illness', house: 6 },
+    { key: 'children', label: 'Children / pregnancy', house: 5 },
+    { key: 'travel_short', label: 'Short travel', house: 3 },
+    { key: 'travel_long', label: 'Long travel', house: 9 },
+    { key: 'education', label: 'Education / higher learning', house: 9 },
+    { key: 'friends', label: 'Friends / groups', house: 11 },
+    { key: 'legal', label: 'Legal dispute', house: 7 }
+];
+
 function pad2(value) {
     return String(value).padStart(2, '0');
 }
@@ -417,6 +432,57 @@ function longitudeToSign(lon) {
     };
 }
 
+function getQuestionType(key) {
+    return QUESTION_TYPES.find((type) => type.key === key) || QUESTION_TYPES[0];
+}
+
+function getHouseInfo(chart, houseNumber) {
+    const cusp = chart.houses[houseNumber - 1];
+    const sign = longitudeToSign(cusp).sign;
+    return {
+        house: houseNumber,
+        cusp,
+        sign,
+        ruler: SIGN_RULERS[sign]
+    };
+}
+
+function findAspectBetween(lonA, lonB) {
+    const diff = normalizeDegrees(lonA - lonB);
+    const angle = diff > 180 ? 360 - diff : diff;
+    let best = null;
+    ASPECTS.forEach((aspect) => {
+        const delta = Math.abs(angle - aspect.angle);
+        if (delta <= aspect.orb && (!best || delta < best.orb)) {
+            best = { name: aspect.name, orb: delta };
+        }
+    });
+    return best;
+}
+
+function buildKeyAspectRows(significators, planetMap) {
+    const rows = [];
+    for (let i = 0; i < significators.length; i += 1) {
+        for (let j = i + 1; j < significators.length; j += 1) {
+            const a = significators[i];
+            const b = significators[j];
+            if (a.planet === b.planet) {
+                continue;
+            }
+            const planetA = planetMap.get(a.planet);
+            const planetB = planetMap.get(b.planet);
+            if (!planetA || !planetB) {
+                continue;
+            }
+            const aspect = findAspectBetween(planetA.longitude, planetB.longitude);
+            if (aspect) {
+                rows.push([a.planet, b.planet, aspect.name, `${aspect.orb.toFixed(2)} deg`]);
+            }
+        }
+    }
+    return rows;
+}
+
 function isBetweenZodiac(start, end, value) {
     const span = normalizeDegrees(end - start);
     const rel = normalizeDegrees(value - start);
@@ -552,8 +618,18 @@ function calculateHorary(dateUtc, location) {
 
 function renderResults(container, input, chart) {
     container.innerHTML = '';
+    const questionType = getQuestionType(input.questionType);
+    const houseInfo = questionType.house ? getHouseInfo(chart, questionType.house) : null;
+    const sharedNotes = [];
+    if (houseInfo && houseInfo.ruler === chart.significators.ascRuler) {
+        sharedNotes.push(`Ascendant ruler equals H${houseInfo.house} ruler (${houseInfo.ruler}).`);
+    }
+    if (houseInfo && houseInfo.ruler === 'Moon') {
+        sharedNotes.push('Question house ruler is Moon.');
+    }
     const summaryRows = [
         ['Question', input.question || '-'],
+        ['Question type', questionType.label],
         ['Local time', formatLocal(input.dateUtc, input.tzOffset)],
         ['UTC time', formatUtc(input.dateUtc)],
         ['UTC offset', formatOffset(input.tzOffset)],
@@ -562,6 +638,16 @@ function renderResults(container, input, chart) {
         ['Julian day', chart.jd.toFixed(5)]
     ];
     const summary = createSection('Summary', createTable(['Field', 'Value'], summaryRows, 'kv-table'));
+
+    const analysisRows = [
+        ['Question type', questionType.label],
+        ['Question house', houseInfo ? `House ${houseInfo.house}` : 'Not specified'],
+        ['House cusp', houseInfo ? formatLongitude(houseInfo.cusp) : '-'],
+        ['House sign', houseInfo ? houseInfo.sign : '-'],
+        ['House ruler', houseInfo ? houseInfo.ruler : '-'],
+        ['Shared ruler', sharedNotes.length ? sharedNotes.join(' ') : '-']
+    ];
+    const analysisSection = createSection('Question analysis', createTable(['Field', 'Value'], analysisRows, 'kv-table'));
 
     const houseRows = chart.houses.map((cusp, index) => [
         `${index + 1}`,
@@ -578,14 +664,30 @@ function renderResults(container, input, chart) {
     ]);
     const planetsSection = createSection('Planets', createTable(['Planet', 'Longitude', 'Latitude', 'House', 'Motion'], planetRows));
 
-    const significatorRows = [
-        ['Ascendant sign', chart.significators.ascSign],
-        ['Ascendant ruler', chart.significators.ascRuler],
-        ['Descendant sign', chart.significators.descSign],
-        ['Descendant ruler', chart.significators.descRuler],
-        ['Moon', 'Co-significator']
+    const significators = [
+        { role: 'Ascendant sign', planet: chart.significators.ascSign },
+        { role: 'Ascendant ruler', planet: chart.significators.ascRuler },
+        { role: 'Moon', planet: 'Moon' }
     ];
+    if (houseInfo) {
+        significators.push({ role: `House ${houseInfo.house} ruler`, planet: houseInfo.ruler });
+    }
+    const significatorRows = significators.map((item) => [item.role, item.planet]);
     const significatorsSection = createSection('Significators', createTable(['Role', 'Value'], significatorRows, 'kv-table'));
+
+    const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
+    const keyAspectRows = buildKeyAspectRows(
+        significators.filter((item) => item.role !== 'Ascendant sign'),
+        planetMap
+    );
+    const keyAspectsContent = keyAspectRows.length
+        ? createTable(['Planet A', 'Planet B', 'Aspect', 'Orb'], keyAspectRows)
+        : (() => {
+            const empty = document.createElement('div');
+            empty.textContent = 'No major aspects within 5 deg orb for key significators.';
+            return empty;
+        })();
+    const keyAspectsSection = createSection('Key aspects', keyAspectsContent);
 
     const aspectRows = chart.aspects.map((aspect) => [
         aspect.planetA,
@@ -607,9 +709,11 @@ function renderResults(container, input, chart) {
     const noteSection = createSection('Notes', note);
 
     container.appendChild(summary);
+    container.appendChild(analysisSection);
     container.appendChild(housesSection);
     container.appendChild(planetsSection);
     container.appendChild(significatorsSection);
+    container.appendChild(keyAspectsSection);
     container.appendChild(aspectsSection);
     container.appendChild(noteSection);
 }
@@ -630,6 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsDiv = document.getElementById('results');
     const datetimeInput = document.getElementById('datetime');
     const tzInput = document.getElementById('tz-offset');
+    const questionTypeSelect = document.getElementById('question-type');
     const locationSearchInput = document.getElementById('location-search');
     const locationResults = document.getElementById('location-results');
     const locationSelected = document.getElementById('location-selected');
@@ -768,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
         event.preventDefault();
         const question = document.getElementById('question').value.trim();
+        const questionType = questionTypeSelect.value;
         const tzOffset = parseFloat(tzInput.value);
         const lat = parseFloat(latInput.value);
         const lon = parseFloat(lonInput.value);
@@ -792,6 +898,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const locationName = selectedLocationName === 'Custom coordinates'
             ? 'Custom coordinates'
             : (locationSearchInput.value.trim() || selectedLocationName);
-        renderResults(resultsDiv, { question, dateUtc, tzOffset, lat, lon, locationName }, chart);
+        renderResults(resultsDiv, { question, questionType, dateUtc, tzOffset, lat, lon, locationName }, chart);
     });
 });
