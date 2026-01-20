@@ -55,6 +55,8 @@ cd android
 и release (unsigned):
 `android/app/build/outputs/apk/release/app-release-unsigned.apk`
 
+Примечание: для работы `npx cap sync android` требуется NodeJS >= 22.
+
 ## Подписание release APK (если нужно опубликовать)
 1. Создайте keystore:
    ```bash

@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Setup Java
@@ -38,8 +38,8 @@ jobs:
       - name: Build web assets
         run: npm run build
 
-      - name: Copy Capacitor assets
-        run: npx cap copy android
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
