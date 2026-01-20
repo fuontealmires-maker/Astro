@@ -7,7 +7,9 @@
 ### Вариант 0: APK из GitHub Actions (без сборки на телефоне)
 1. Откройте вкладку **Actions** в репозитории GitHub.
 2. Выберите workflow **Build Android APK** и дождитесь успешного запуска.
-3. В **Artifacts** скачайте файл `horary-astro-debug.apk`.
+3. В **Artifacts** скачайте:
+   - `horary-astro-debug.apk` (debug)
+   - `horary-astro-release-unsigned.apk` (release, без подписи)
 4. Перенесите APK на телефон и установите (разрешите установку из неизвестных источников).
 
 ### Вариант 1: локальный сервер через Termux
@@ -45,9 +47,28 @@ npm run build
 npx cap sync android
 cd android
 ./gradlew assembleDebug
+./gradlew assembleRelease
 ```
 Готовый APK будет здесь:
 `android/app/build/outputs/apk/debug/app-debug.apk`
+и release (unsigned):
+`android/app/build/outputs/apk/release/app-release-unsigned.apk`
+
+## Подписание release APK (если нужно опубликовать)
+1. Создайте keystore:
+   ```bash
+   keytool -genkeypair -v -keystore horary-astro.keystore \
+     -alias horaryastro -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. Подпишите APK:
+   ```bash
+   apksigner sign --ks horary-astro.keystore \
+     android/app/build/outputs/apk/release/app-release-unsigned.apk
+   ```
+3. Проверка подписи:
+   ```bash
+   apksigner verify android/app/build/outputs/apk/release/app-release-unsigned.apk
+   ```
 
 ## Примечания
 - Поиск городов использует Nominatim (OpenStreetMap) и требует интернет.
