@@ -108,19 +108,188 @@ const ASPECTS = [
     { name: 'Sextile', angle: 60, orb: 5 }
 ];
 
-const QUESTION_TYPES = [
-    { key: 'general', label: 'General / unspecified', house: null },
-    { key: 'relationship', label: 'Relationships / partner', house: 7 },
-    { key: 'career', label: 'Career / job', house: 10 },
-    { key: 'money', label: 'Money / income', house: 2 },
-    { key: 'property', label: 'Property / home', house: 4 },
-    { key: 'health', label: 'Health / illness', house: 6 },
-    { key: 'children', label: 'Children / pregnancy', house: 5 },
-    { key: 'travel_short', label: 'Short travel', house: 3 },
-    { key: 'travel_long', label: 'Long travel', house: 9 },
-    { key: 'education', label: 'Education / higher learning', house: 9 },
-    { key: 'friends', label: 'Friends / groups', house: 11 },
-    { key: 'legal', label: 'Legal dispute', house: 7 }
+const DEFAULT_SUBJECT = {
+    key: 'querent',
+    label: 'Querent (you)',
+    house: 1
+};
+
+const SUBJECT_RULES = [
+    {
+        key: 'partner',
+        label: 'Partner / spouse',
+        house: 7,
+        priority: 3,
+        keywords: ['муж', 'жена', 'супруг', 'супруга', 'партнер', 'парень', 'девуш', 'любовник', 'бывш',
+            'husband', 'wife', 'spouse', 'partner', 'boyfriend', 'girlfriend', 'ex']
+    },
+    {
+        key: 'child',
+        label: 'Child',
+        house: 5,
+        priority: 3,
+        keywords: ['ребен', 'дет', 'сын', 'дочь', 'беремен', 'child', 'son', 'daughter', 'pregnan']
+    },
+    {
+        key: 'mother',
+        label: 'Mother',
+        house: 10,
+        priority: 2,
+        keywords: ['мать', 'мама', 'mother', 'mom']
+    },
+    {
+        key: 'father',
+        label: 'Father',
+        house: 4,
+        priority: 2,
+        keywords: ['отец', 'пап', 'father', 'dad']
+    },
+    {
+        key: 'sibling',
+        label: 'Sibling',
+        house: 3,
+        priority: 2,
+        keywords: ['брат', 'сестр', 'brother', 'sister', 'sibling']
+    },
+    {
+        key: 'employer',
+        label: 'Employer / authority',
+        house: 10,
+        priority: 2,
+        keywords: ['начальник', 'работод', 'директор', 'босс', 'manager', 'boss', 'employer']
+    },
+    {
+        key: 'colleague',
+        label: 'Colleague / coworker',
+        house: 6,
+        priority: 1,
+        keywords: ['коллег', 'сотрудник', 'coworker', 'colleague']
+    },
+    {
+        key: 'friend',
+        label: 'Friend',
+        house: 11,
+        priority: 1,
+        keywords: ['друг', 'подруг', 'friend']
+    },
+    {
+        key: 'neighbor',
+        label: 'Neighbor',
+        house: 3,
+        priority: 1,
+        keywords: ['сосед', 'neighbor']
+    },
+    {
+        key: 'enemy_secret',
+        label: 'Secret enemy',
+        house: 12,
+        priority: 1,
+        keywords: ['тайн', 'подков', 'secret enemy']
+    },
+    {
+        key: 'enemy_open',
+        label: 'Opponent / enemy',
+        house: 7,
+        priority: 1,
+        keywords: ['враг', 'оппонент', 'конкурент', 'opponent', 'enemy']
+    },
+    {
+        key: 'pet',
+        label: 'Pet',
+        house: 6,
+        priority: 1,
+        keywords: ['животн', 'кот', 'собак', 'pet', 'dog', 'cat']
+    }
+];
+
+const TOPIC_RULES = [
+    {
+        key: 'relationship',
+        label: 'Relationship / partnership',
+        house: 7,
+        priority: 2,
+        keywords: ['отношен', 'любов', 'брак', 'развод', 'женить', 'свадьб', 'relationship', 'marriage', 'divorc',
+            'dating']
+    },
+    {
+        key: 'money',
+        label: 'Money / income',
+        house: 2,
+        priority: 2,
+        keywords: ['деньг', 'доход', 'зарплат', 'прибыл', 'финанс', 'кредит', 'долг', 'ипотек', 'salary', 'income',
+            'money', 'loan', 'debt', 'profit']
+    },
+    {
+        key: 'property',
+        label: 'Property / home',
+        house: 4,
+        priority: 2,
+        keywords: ['дом', 'квартир', 'недвиж', 'земл', 'жиль', 'ипотек', 'house', 'home', 'property', 'estate']
+    },
+    {
+        key: 'career',
+        label: 'Career / job',
+        house: 10,
+        priority: 2,
+        keywords: ['работ', 'карьер', 'должност', 'бизнес', 'job', 'career', 'position', 'company']
+    },
+    {
+        key: 'health',
+        label: 'Health / illness',
+        house: 6,
+        priority: 2,
+        keywords: ['здоров', 'болезн', 'врач', 'операц', 'health', 'illness', 'sick']
+    },
+    {
+        key: 'children',
+        label: 'Children / pregnancy',
+        house: 5,
+        priority: 2,
+        keywords: ['дет', 'ребен', 'беремен', 'pregnan', 'child']
+    },
+    {
+        key: 'travel_short',
+        label: 'Short travel',
+        house: 3,
+        priority: 1,
+        keywords: ['поездк', 'дорог', 'командир', 'travel', 'trip']
+    },
+    {
+        key: 'travel_long',
+        label: 'Long travel / abroad',
+        house: 9,
+        priority: 2,
+        keywords: ['загран', 'эмигр', 'переезд', 'дальн', 'abroad', 'emigr', 'immigr', 'relocat'],
+        phrases: ['за границ']
+    },
+    {
+        key: 'education',
+        label: 'Education / higher learning',
+        house: 9,
+        priority: 1,
+        keywords: ['учеб', 'универс', 'экзам', 'образован', 'education', 'university', 'exam']
+    },
+    {
+        key: 'friends',
+        label: 'Friends / groups',
+        house: 11,
+        priority: 1,
+        keywords: ['друз', 'подруг', 'friend', 'group', 'сообществ', 'команда']
+    },
+    {
+        key: 'legal',
+        label: 'Legal / dispute',
+        house: 7,
+        priority: 2,
+        keywords: ['суд', 'иск', 'разбират', 'юрист', 'legal', 'court', 'lawsuit']
+    },
+    {
+        key: 'inheritance',
+        label: 'Inheritance / death',
+        house: 8,
+        priority: 2,
+        keywords: ['наслед', 'смерт', 'страхов', 'death', 'inherit']
+    }
 ];
 
 function pad2(value) {
@@ -432,8 +601,82 @@ function longitudeToSign(lon) {
     };
 }
 
-function getQuestionType(key) {
-    return QUESTION_TYPES.find((type) => type.key === key) || QUESTION_TYPES[0];
+function tokenizeQuestion(text) {
+    const normalized = (text || '').toLowerCase();
+    const tokens = normalized.match(/[a-zа-яё0-9]+/gi) || [];
+    return { normalized, tokens };
+}
+
+function collectMatches(rule, tokens, normalized) {
+    const matches = new Set();
+    if (rule.keywords) {
+        rule.keywords.forEach((keyword) => {
+            if (tokens.some((token) => token.startsWith(keyword))) {
+                matches.add(keyword);
+            }
+        });
+    }
+    if (rule.phrases) {
+        rule.phrases.forEach((phrase) => {
+            if (normalized.includes(phrase)) {
+                matches.add(phrase);
+            }
+        });
+    }
+    return Array.from(matches);
+}
+
+function selectRule(rules, tokens, normalized) {
+    let best = null;
+    rules.forEach((rule) => {
+        const matches = collectMatches(rule, tokens, normalized);
+        if (!matches.length) {
+            return;
+        }
+        const score = matches.length;
+        const priority = rule.priority ?? 0;
+        if (!best || score > best.score || (score === best.score && priority > best.priority)) {
+            best = {
+                rule,
+                matches,
+                score,
+                priority
+            };
+        }
+    });
+    return best;
+}
+
+function deriveHouse(subjectHouse, baseHouse) {
+    return ((subjectHouse - 1 + baseHouse - 1) % 12) + 1;
+}
+
+function classifyQuestion(question) {
+    const { normalized, tokens } = tokenizeQuestion(question);
+    const subjectMatch = selectRule(SUBJECT_RULES, tokens, normalized);
+    const topicMatch = selectRule(TOPIC_RULES, tokens, normalized);
+    const subject = subjectMatch
+        ? { ...subjectMatch.rule, matches: subjectMatch.matches }
+        : { ...DEFAULT_SUBJECT, matches: [] };
+    const topic = topicMatch
+        ? { ...topicMatch.rule, matches: topicMatch.matches }
+        : null;
+    let questionHouse = subject.house;
+    let derivation = `H${subject.house}`;
+    if (topic) {
+        questionHouse = deriveHouse(subject.house, topic.house);
+        derivation = `H${topic.house} from H${subject.house} = H${questionHouse}`;
+    } else if (subject.house === 1) {
+        derivation = 'No topic matched, using H1 (querent)';
+    } else {
+        derivation = `No topic matched, using subject house H${subject.house}`;
+    }
+    return {
+        subject,
+        topic,
+        questionHouse,
+        derivation
+    };
 }
 
 function getHouseInfo(chart, houseNumber) {
@@ -454,32 +697,43 @@ function findAspectBetween(lonA, lonB) {
     ASPECTS.forEach((aspect) => {
         const delta = Math.abs(angle - aspect.angle);
         if (delta <= aspect.orb && (!best || delta < best.orb)) {
-            best = { name: aspect.name, orb: delta };
+            best = { name: aspect.name, orb: delta, angle: aspect.angle };
         }
     });
     return best;
 }
 
-function buildKeyAspectRows(significators, planetMap) {
+function orbToAspect(lonA, lonB, aspectAngle) {
+    const diff = normalizeDegrees(lonA - lonB);
+    const angle = diff > 180 ? 360 - diff : diff;
+    return Math.abs(angle - aspectAngle);
+}
+
+function buildKeyAspectRows(pairs, planetMap) {
     const rows = [];
-    for (let i = 0; i < significators.length; i += 1) {
-        for (let j = i + 1; j < significators.length; j += 1) {
-            const a = significators[i];
-            const b = significators[j];
-            if (a.planet === b.planet) {
-                continue;
-            }
-            const planetA = planetMap.get(a.planet);
-            const planetB = planetMap.get(b.planet);
-            if (!planetA || !planetB) {
-                continue;
-            }
-            const aspect = findAspectBetween(planetA.longitude, planetB.longitude);
-            if (aspect) {
-                rows.push([a.planet, b.planet, aspect.name, `${aspect.orb.toFixed(2)} deg`]);
-            }
+    pairs.forEach((pair) => {
+        if (pair.planetA === pair.planetB) {
+            return;
         }
-    }
+        const planetA = planetMap.get(pair.planetA);
+        const planetB = planetMap.get(pair.planetB);
+        if (!planetA || !planetB) {
+            return;
+        }
+        const aspect = findAspectBetween(planetA.longitude, planetB.longitude);
+        if (!aspect) {
+            return;
+        }
+        const futureOrb = orbToAspect(planetA.futureLongitude, planetB.futureLongitude, aspect.angle);
+        const motion = futureOrb < aspect.orb ? 'Applying' : 'Separating';
+        rows.push([
+            pair.labelA,
+            pair.labelB,
+            aspect.name,
+            `${aspect.orb.toFixed(2)} deg`,
+            motion
+        ]);
+    });
     return rows;
 }
 
@@ -592,6 +846,7 @@ function calculateHorary(dateUtc, location) {
         return {
             name: planet.name,
             longitude: current.lon,
+            futureLongitude: future.lon,
             latitude: current.lat,
             retrograde: delta < 0,
             house
@@ -618,18 +873,14 @@ function calculateHorary(dateUtc, location) {
 
 function renderResults(container, input, chart) {
     container.innerHTML = '';
-    const questionType = getQuestionType(input.questionType);
-    const houseInfo = questionType.house ? getHouseInfo(chart, questionType.house) : null;
-    const sharedNotes = [];
-    if (houseInfo && houseInfo.ruler === chart.significators.ascRuler) {
-        sharedNotes.push(`Ascendant ruler equals H${houseInfo.house} ruler (${houseInfo.ruler}).`);
-    }
-    if (houseInfo && houseInfo.ruler === 'Moon') {
-        sharedNotes.push('Question house ruler is Moon.');
-    }
+    const classification = input.classification;
+    const subjectInfo = classification.subject;
+    const topicInfo = classification.topic;
+    const questionHouse = classification.questionHouse;
+    const subjectHouseInfo = getHouseInfo(chart, subjectInfo.house);
+    const questionHouseInfo = getHouseInfo(chart, questionHouse);
     const summaryRows = [
         ['Question', input.question || '-'],
-        ['Question type', questionType.label],
         ['Local time', formatLocal(input.dateUtc, input.tzOffset)],
         ['UTC time', formatUtc(input.dateUtc)],
         ['UTC offset', formatOffset(input.tzOffset)],
@@ -639,15 +890,28 @@ function renderResults(container, input, chart) {
     ];
     const summary = createSection('Summary', createTable(['Field', 'Value'], summaryRows, 'kv-table'));
 
-    const analysisRows = [
-        ['Question type', questionType.label],
-        ['Question house', houseInfo ? `House ${houseInfo.house}` : 'Not specified'],
-        ['House cusp', houseInfo ? formatLongitude(houseInfo.cusp) : '-'],
-        ['House sign', houseInfo ? houseInfo.sign : '-'],
-        ['House ruler', houseInfo ? houseInfo.ruler : '-'],
-        ['Shared ruler', sharedNotes.length ? sharedNotes.join(' ') : '-']
+    const classificationRows = [
+        ['Subject', `${subjectInfo.label} (H${subjectInfo.house})`],
+        ['Subject matches', subjectInfo.matches.length ? subjectInfo.matches.join(', ') : '-'],
+        ['Topic', topicInfo ? `${topicInfo.label} (H${topicInfo.house})` : 'Not detected'],
+        ['Topic matches', topicInfo && topicInfo.matches.length ? topicInfo.matches.join(', ') : '-'],
+        ['Derived question house', `H${questionHouse}`],
+        ['Derivation', classification.derivation]
     ];
-    const analysisSection = createSection('Question analysis', createTable(['Field', 'Value'], analysisRows, 'kv-table'));
+    const classificationSection = createSection(
+        'Classification (Frawley, derived houses)',
+        createTable(['Field', 'Value'], classificationRows, 'kv-table')
+    );
+
+    const derivedRows = [
+        ['Subject cusp', `H${subjectHouseInfo.house} ${formatLongitude(subjectHouseInfo.cusp)}`],
+        ['Subject sign', subjectHouseInfo.sign],
+        ['Subject ruler', subjectHouseInfo.ruler],
+        ['Question cusp', `H${questionHouseInfo.house} ${formatLongitude(questionHouseInfo.cusp)}`],
+        ['Question sign', questionHouseInfo.sign],
+        ['Question ruler', questionHouseInfo.ruler]
+    ];
+    const derivedSection = createSection('Derived house details', createTable(['Field', 'Value'], derivedRows, 'kv-table'));
 
     const houseRows = chart.houses.map((cusp, index) => [
         `${index + 1}`,
@@ -664,24 +928,41 @@ function renderResults(container, input, chart) {
     ]);
     const planetsSection = createSection('Planets', createTable(['Planet', 'Longitude', 'Latitude', 'House', 'Motion'], planetRows));
 
-    const significators = [
-        { role: 'Ascendant sign', planet: chart.significators.ascSign },
-        { role: 'Ascendant ruler', planet: chart.significators.ascRuler },
-        { role: 'Moon', planet: 'Moon' }
+    const significatorRows = [
+        ['Ascendant sign', chart.significators.ascSign],
+        ['Ascendant ruler', chart.significators.ascRuler],
+        ['Moon (co-significator)', 'Moon'],
+        [`Subject ruler (H${subjectHouseInfo.house})`, subjectHouseInfo.ruler],
+        [`Question ruler (H${questionHouseInfo.house})`, questionHouseInfo.ruler]
     ];
-    if (houseInfo) {
-        significators.push({ role: `House ${houseInfo.house} ruler`, planet: houseInfo.ruler });
-    }
-    const significatorRows = significators.map((item) => [item.role, item.planet]);
     const significatorsSection = createSection('Significators', createTable(['Role', 'Value'], significatorRows, 'kv-table'));
 
     const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
-    const keyAspectRows = buildKeyAspectRows(
-        significators.filter((item) => item.role !== 'Ascendant sign'),
-        planetMap
-    );
+    const keyPairs = [
+        {
+            labelA: 'Asc ruler',
+            planetA: chart.significators.ascRuler,
+            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            planetB: questionHouseInfo.ruler
+        },
+        {
+            labelA: 'Moon',
+            planetA: 'Moon',
+            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            planetB: questionHouseInfo.ruler
+        }
+    ];
+    if (subjectHouseInfo.house !== 1) {
+        keyPairs.push({
+            labelA: `Subject ruler (H${subjectHouseInfo.house})`,
+            planetA: subjectHouseInfo.ruler,
+            labelB: `Question ruler (H${questionHouseInfo.house})`,
+            planetB: questionHouseInfo.ruler
+        });
+    }
+    const keyAspectRows = buildKeyAspectRows(keyPairs, planetMap);
     const keyAspectsContent = keyAspectRows.length
-        ? createTable(['Planet A', 'Planet B', 'Aspect', 'Orb'], keyAspectRows)
+        ? createTable(['Role A', 'Role B', 'Aspect', 'Orb', 'Motion'], keyAspectRows)
         : (() => {
             const empty = document.createElement('div');
             empty.textContent = 'No major aspects within 5 deg orb for key significators.';
@@ -705,11 +986,12 @@ function renderResults(container, input, chart) {
     const aspectsSection = createSection('Aspects', aspectsContent);
 
     const note = document.createElement('div');
-    note.textContent = 'Note: Regiomontanus houses, 5 deg orb, outer planets excluded.';
+    note.textContent = 'Note: Regiomontanus houses, 5 deg orb, outer planets excluded, Frawley classification with derived houses.';
     const noteSection = createSection('Notes', note);
 
     container.appendChild(summary);
-    container.appendChild(analysisSection);
+    container.appendChild(classificationSection);
+    container.appendChild(derivedSection);
     container.appendChild(housesSection);
     container.appendChild(planetsSection);
     container.appendChild(significatorsSection);
@@ -734,7 +1016,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsDiv = document.getElementById('results');
     const datetimeInput = document.getElementById('datetime');
     const tzInput = document.getElementById('tz-offset');
-    const questionTypeSelect = document.getElementById('question-type');
     const locationSearchInput = document.getElementById('location-search');
     const locationResults = document.getElementById('location-results');
     const locationSelected = document.getElementById('location-selected');
@@ -873,7 +1154,6 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
         event.preventDefault();
         const question = document.getElementById('question').value.trim();
-        const questionType = questionTypeSelect.value;
         const tzOffset = parseFloat(tzInput.value);
         const lat = parseFloat(latInput.value);
         const lon = parseFloat(lonInput.value);
@@ -898,6 +1178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const locationName = selectedLocationName === 'Custom coordinates'
             ? 'Custom coordinates'
             : (locationSearchInput.value.trim() || selectedLocationName);
-        renderResults(resultsDiv, { question, questionType, dateUtc, tzOffset, lat, lon, locationName }, chart);
+        const classification = classifyQuestion(question);
+        renderResults(resultsDiv, { question, classification, dateUtc, tzOffset, lat, lon, locationName }, chart);
     });
 });
