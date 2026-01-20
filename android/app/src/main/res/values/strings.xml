@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Horary Astro</string>
+    <string name="title_activity_main">Horary Astro</string>
+    <string name="package_name">com.fuontealmires.astro</string>
+    <string name="custom_url_scheme">com.fuontealmires.astro</string>
+</resources>

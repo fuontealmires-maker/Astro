@@ -1,0 +1,6 @@
+{
+  "appId": "com.fuontealmires.astro",
+  "appName": "Horary Astro",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

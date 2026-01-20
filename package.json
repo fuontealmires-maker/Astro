@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo \"No build step required for static site\""
+    "build": "node scripts/build.js",
+    "sync:android": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/cli": "^8.0.1",
+    "pngjs": "^7.0.0"
   }
 }
