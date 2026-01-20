@@ -11,6 +11,7 @@
    - `horary-astro-debug.apk` (debug)
    - `horary-astro-release-unsigned.apk` (release, без подписи)
 4. Перенесите APK на телефон и установите (разрешите установку из неизвестных источников).
+5. Альтернатива: откройте вкладку **Releases** и скачайте **Latest APK**.
 
 ### Вариант 1: локальный сервер через Termux
 1. Установите **Termux** из F-Droid: https://f-droid.org/packages/com.termux/

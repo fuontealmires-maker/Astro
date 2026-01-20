@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,6 +53,12 @@ jobs:
           ls -la android/app/build/outputs/apk/debug || true
           ls -la android/app/build/outputs/apk/release || true
 
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          cp android/app/build/outputs/apk/debug/app-debug.apk release/horary-astro-debug.apk
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release/horary-astro-release-unsigned.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -61,3 +70,14 @@ jobs:
         with:
           name: horary-astro-release-unsigned.apk
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Publish GitHub Release (latest)
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Latest APK
+          body: Автообновляемый релиз с актуальными APK (debug и release unsigned).
+          artifacts: release/*.apk
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
