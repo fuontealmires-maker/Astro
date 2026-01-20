@@ -1,13 +1,13 @@
-const LOCATIONS = {
-    odessa: {
-        label: 'Odessa, Ukraine',
-        lat: 46.4825,
-        lon: 30.7233,
-        tzOffset: 2
-    }
+const DEFAULT_LOCATION = {
+    label: 'Odessa, Ukraine',
+    lat: 46.4825,
+    lon: 30.7233,
+    tzOffset: 2
 };
 
-const DEFAULT_LOCATION_KEY = 'odessa';
+const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search';
+const SEARCH_MIN_CHARS = 3;
+const SEARCH_DEBOUNCE_MS = 400;
 
 const PLANETS = [
     { key: 'sun', name: 'Sun' },
@@ -97,31 +97,6 @@ const ORBITAL_ELEMENTS = {
         a: [9.55475, 0],
         e: [0.055546, -9.499e-9],
         M: [316.9670, 0.0334442282]
-    },
-    uranus: {
-        N: [74.0005, 1.3978e-5],
-        i: [0.7733, 1.9e-8],
-        w: [96.6612, 3.0565e-5],
-        a: [19.18171, -1.55e-8],
-        e: [0.047318, 7.45e-9],
-        M: [142.5905, 0.011725806]
-    },
-    neptune: {
-        N: [131.7806, 3.0173e-5],
-        i: [1.77, -2.55e-7],
-        w: [272.8461, -6.027e-6],
-        a: [30.05826, 3.313e-8],
-        e: [0.008606, 2.15e-9],
-        M: [260.2471, 0.005995147]
-    },
-    // Pluto uses a simplified orbital model for horary use.
-    pluto: {
-        N: [110.30347, 0],
-        i: [17.14175, 0],
-        w: [113.76329, 0],
-        a: [39.48168677, 0],
-        e: [0.24880766, 0],
-        M: [14.53, 0.00396]
     }
 };
 
@@ -175,6 +150,28 @@ function getDefaultDateTime(offsetHours) {
     const localDate = new Date(localMillis);
     return `${localDate.getUTCFullYear()}-${pad2(localDate.getUTCMonth() + 1)}-${pad2(localDate.getUTCDate())}` +
         `T${pad2(localDate.getUTCHours())}:${pad2(localDate.getUTCMinutes())}`;
+}
+
+function formatCoordinate(value) {
+    return Number(value).toFixed(5);
+}
+
+function buildNominatimUrl(query) {
+    const url = new URL(NOMINATIM_SEARCH_URL);
+    url.searchParams.set('format', 'jsonv2');
+    url.searchParams.set('limit', '6');
+    url.searchParams.set('q', query);
+    url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('accept-language', 'ru');
+    return url.toString();
+}
+
+function mapNominatimResult(result) {
+    return {
+        name: result.display_name,
+        lat: Number(result.lat),
+        lon: Number(result.lon)
+    };
 }
 
 function parseDateTimeLocal(value, offsetHours) {
@@ -633,32 +630,140 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsDiv = document.getElementById('results');
     const datetimeInput = document.getElementById('datetime');
     const tzInput = document.getElementById('tz-offset');
-    const locationSelect = document.getElementById('location-select');
+    const locationSearchInput = document.getElementById('location-search');
+    const locationResults = document.getElementById('location-results');
+    const locationSelected = document.getElementById('location-selected');
+    const useDefaultButton = document.getElementById('use-default-location');
     const latInput = document.getElementById('latitude');
     const lonInput = document.getElementById('longitude');
 
-    const defaultLocation = LOCATIONS[DEFAULT_LOCATION_KEY];
-    tzInput.value = defaultLocation.tzOffset;
-    datetimeInput.value = getDefaultDateTime(defaultLocation.tzOffset);
-    locationSelect.value = DEFAULT_LOCATION_KEY;
+    tzInput.value = DEFAULT_LOCATION.tzOffset;
+    datetimeInput.value = getDefaultDateTime(DEFAULT_LOCATION.tzOffset);
+    latInput.value = formatCoordinate(DEFAULT_LOCATION.lat);
+    lonInput.value = formatCoordinate(DEFAULT_LOCATION.lon);
+    locationSelected.textContent = `Selected: ${DEFAULT_LOCATION.label}`;
 
-    const applyLocationSelection = () => {
-        const key = locationSelect.value;
-        const preset = LOCATIONS[key];
-        const isCustom = key === 'custom';
-        if (preset) {
-            latInput.value = preset.lat;
-            lonInput.value = preset.lon;
-        }
-        latInput.disabled = !isCustom;
-        lonInput.disabled = !isCustom;
+    let selectedLocationName = DEFAULT_LOCATION.label;
+    let isApplyingLocation = false;
+    let searchTimer = null;
+    let searchRequestId = 0;
+
+    const clearLocationResults = () => {
+        locationResults.innerHTML = '';
+        locationResults.classList.remove('open');
     };
 
-    applyLocationSelection();
+    const setSelectedLocation = (label) => {
+        selectedLocationName = label;
+        locationSelected.textContent = `Selected: ${label}`;
+    };
 
-    locationSelect.addEventListener('change', () => {
-        applyLocationSelection();
+    const applyLocation = (location, updateSearchValue) => {
+        isApplyingLocation = true;
+        latInput.value = formatCoordinate(location.lat);
+        lonInput.value = formatCoordinate(location.lon);
+        if (updateSearchValue) {
+            locationSearchInput.value = location.name;
+        }
+        setSelectedLocation(location.name);
+        isApplyingLocation = false;
+    };
+
+    const renderLocationResults = (items, query) => {
+        clearLocationResults();
+        if (!query || query.length < SEARCH_MIN_CHARS) {
+            return;
+        }
+        if (!items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'result-item';
+            empty.textContent = 'No results found.';
+            locationResults.appendChild(empty);
+            locationResults.classList.add('open');
+            return;
+        }
+        items.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'result-item';
+            button.textContent = item.name;
+            button.addEventListener('click', () => {
+                applyLocation(item, true);
+                clearLocationResults();
+            });
+            locationResults.appendChild(button);
+        });
+        locationResults.classList.add('open');
+    };
+
+    const handleSearch = async (query, requestId) => {
+        try {
+            const response = await fetch(buildNominatimUrl(query), {
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error('Search failed.');
+            }
+            const data = await response.json();
+            if (requestId !== searchRequestId) {
+                return;
+            }
+            const items = Array.isArray(data)
+                ? data.map(mapNominatimResult).filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lon))
+                : [];
+            renderLocationResults(items, query);
+        } catch (error) {
+            if (requestId !== searchRequestId) {
+                return;
+            }
+            renderLocationResults([], query);
+        }
+    };
+
+    locationSearchInput.addEventListener('input', () => {
+        const query = locationSearchInput.value.trim();
+        if (!isApplyingLocation && query.length > 0) {
+            setSelectedLocation('Custom coordinates');
+        }
+        if (searchTimer) {
+            clearTimeout(searchTimer);
+        }
+        if (query.length < SEARCH_MIN_CHARS) {
+            clearLocationResults();
+            return;
+        }
+        searchRequestId += 1;
+        const currentRequest = searchRequestId;
+        searchTimer = setTimeout(() => {
+            handleSearch(query, currentRequest);
+        }, SEARCH_DEBOUNCE_MS);
     });
+
+    locationSearchInput.addEventListener('blur', () => {
+        setTimeout(() => {
+            clearLocationResults();
+        }, 150);
+    });
+
+    useDefaultButton.addEventListener('click', () => {
+        applyLocation(
+            { name: DEFAULT_LOCATION.label, lat: DEFAULT_LOCATION.lat, lon: DEFAULT_LOCATION.lon },
+            true
+        );
+        tzInput.value = DEFAULT_LOCATION.tzOffset;
+    });
+
+    const markCustomLocation = () => {
+        if (isApplyingLocation) {
+            return;
+        }
+        locationSearchInput.value = '';
+        clearLocationResults();
+        setSelectedLocation('Custom coordinates');
+    };
+
+    latInput.addEventListener('input', markCustomLocation);
+    lonInput.addEventListener('input', markCustomLocation);
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -666,13 +771,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tzOffset = parseFloat(tzInput.value);
         const lat = parseFloat(latInput.value);
         const lon = parseFloat(lonInput.value);
-        const locationKey = locationSelect.value;
-        const preset = LOCATIONS[locationKey];
-        const locationName = preset ? preset.label : 'Custom';
-        if (!preset && locationKey !== 'custom') {
-            renderError(resultsDiv, 'Invalid location selection.');
-            return;
-        }
         if (!Number.isFinite(tzOffset) || tzOffset < -14 || tzOffset > 14) {
             renderError(resultsDiv, 'Invalid UTC offset. Use a value between -14 and +14.');
             return;
@@ -691,6 +789,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const chart = calculateHorary(dateUtc, { lat, lon });
+        const locationName = selectedLocationName === 'Custom coordinates'
+            ? 'Custom coordinates'
+            : (locationSearchInput.value.trim() || selectedLocationName);
         renderResults(resultsDiv, { question, dateUtc, tzOffset, lat, lon, locationName }, chart);
     });
 });
