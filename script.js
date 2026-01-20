@@ -108,6 +108,22 @@ const ASPECTS = [
     { name: 'Sextile', angle: 60, orb: 5 }
 ];
 
+const ASPECT_LABELS = {
+    Conjunction: 'Соединение',
+    Opposition: 'Оппозиция',
+    Trine: 'Трин',
+    Square: 'Квадрат',
+    Sextile: 'Секстиль'
+};
+
+const ASPECT_POLARITY = {
+    Conjunction: '0',
+    Opposition: '-',
+    Trine: '+',
+    Square: '-',
+    Sextile: '+'
+};
+
 const DOMICILES = {
     Sun: ['Leo'],
     Moon: ['Cancer'],
@@ -440,6 +456,24 @@ function formatDegrees(value) {
 function formatSignedDegrees(value) {
     const sign = value >= 0 ? '+' : '-';
     return `${sign}${Math.abs(value).toFixed(2)}°`;
+}
+
+function getAspectLabel(name) {
+    return ASPECT_LABELS[name] || name;
+}
+
+function getAspectPolarity(name) {
+    return ASPECT_POLARITY[name] || '0';
+}
+
+function getAspectPolarityLabel(symbol) {
+    if (symbol === '+') {
+        return 'Плюс';
+    }
+    if (symbol === '-') {
+        return 'Минус';
+    }
+    return 'Нейтральный';
 }
 
 function oppositeSign(sign) {
@@ -858,14 +892,41 @@ function buildKeyAspectRows(pairs, planetMap) {
         }
         const futureOrb = orbToAspect(planetA.futureLongitude, planetB.futureLongitude, aspect.angle);
         const motion = futureOrb < aspect.orb ? 'Applying' : 'Separating';
+        const polaritySymbol = getAspectPolarity(aspect.name);
+        const polarityLabel = getAspectPolarityLabel(polaritySymbol);
         rows.push([
             pair.labelA,
             pair.labelB,
-            aspect.name,
+            getAspectLabel(aspect.name),
             formatDegrees(aspect.orb),
-            motion === 'Applying' ? 'Сходящийся' : 'Расходящийся'
+            motion === 'Applying' ? 'Сходящийся' : 'Расходящийся',
+            `${polaritySymbol} (${polarityLabel})`
         ]);
     });
+    return rows;
+}
+
+function buildAllReceptionRows(planets) {
+    const rows = [];
+    for (let i = 0; i < planets.length; i += 1) {
+        for (let j = i + 1; j < planets.length; j += 1) {
+            const planetA = planets[i];
+            const planetB = planets[j];
+            const signA = longitudeToSign(planetA.longitude).sign;
+            const signB = longitudeToSign(planetB.longitude).sign;
+            const typeAB = getReceptionType(signA, planetB.name);
+            const typeBA = getReceptionType(signB, planetA.name);
+            const mutual = typeAB !== 'Нет' && typeBA !== 'Нет' ? 'Да' : 'Нет';
+            rows.push([
+                `${planetA.name} ↔ ${planetB.name}`,
+                signA,
+                typeAB,
+                signB,
+                typeBA,
+                mutual
+            ]);
+        }
+    }
     return rows;
 }
 
@@ -946,15 +1007,20 @@ function calculateAspects(planets) {
             ASPECTS.forEach((aspect) => {
                 const delta = Math.abs(angle - aspect.angle);
                 if (delta <= aspect.orb && (!bestMatch || delta < bestMatch.orb)) {
-                    bestMatch = { type: aspect.name, orb: delta };
+                    bestMatch = { type: aspect.name, orb: delta, angle: aspect.angle };
                 }
             });
             if (bestMatch) {
+                const futureOrb = orbToAspect(a.futureLongitude, b.futureLongitude, bestMatch.angle);
+                const applying = futureOrb < bestMatch.orb;
+                const polarity = getAspectPolarity(bestMatch.type);
                 aspects.push({
                     planetA: a.name,
                     planetB: b.name,
                     type: bestMatch.type,
-                    orb: bestMatch.orb
+                    orb: bestMatch.orb,
+                    applying,
+                    polarity
                 });
             }
         }
@@ -1134,38 +1200,21 @@ function renderResults(container, input, chart) {
             planetB: questionHouseInfo.ruler
         });
     }
-    const receptionRows = [];
-    keyPairs.forEach((pair) => {
-        const planetA = planetMap.get(pair.planetA);
-        const planetB = planetMap.get(pair.planetB);
-        if (!planetA || !planetB) {
-            return;
-        }
-        const signA = longitudeToSign(planetA.longitude).sign;
-        const signB = longitudeToSign(planetB.longitude).sign;
-        const typeAB = getReceptionType(signA, planetB.name);
-        const typeBA = getReceptionType(signB, planetA.name);
-        receptionRows.push([`${pair.labelA} (${planetA.name})`, `${pair.labelB} (${planetB.name})`, typeAB]);
-        receptionRows.push([`${pair.labelB} (${planetB.name})`, `${pair.labelA} (${planetA.name})`, typeBA]);
-        if (['Обитель', 'Экзальтация'].includes(typeAB) && ['Обитель', 'Экзальтация'].includes(typeBA)) {
-            receptionRows.push([
-                `${pair.labelA} ↔ ${pair.labelB}`,
-                'Взаимная рецепция',
-                `${typeAB} / ${typeBA}`
-            ]);
-        }
-    });
-    const receptionsContent = receptionRows.length
-        ? createTable(['От', 'К', 'Рецепция'], receptionRows)
+    const allReceptionRows = buildAllReceptionRows(chart.planets);
+    const receptionsContent = allReceptionRows.length
+        ? createTable(
+            ['Пара', 'Знак A', 'Рецепция A→B', 'Знак B', 'Рецепция B→A', 'Взаимная'],
+            allReceptionRows
+        )
         : (() => {
             const empty = document.createElement('div');
             empty.textContent = 'Нет данных для рецепций.';
             return empty;
         })();
-    const receptionsSection = createSection('Рецепции', receptionsContent);
+    const receptionsSection = createSection('Все рецепции', receptionsContent);
     const keyAspectRows = buildKeyAspectRows(keyPairs, planetMap);
     const keyAspectsContent = keyAspectRows.length
-        ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Движение'], keyAspectRows)
+        ? createTable(['Роль A', 'Роль B', 'Аспект', 'Орб', 'Фаза', 'Знак'], keyAspectRows)
         : (() => {
             const empty = document.createElement('div');
             empty.textContent = 'Нет мажорных аспектов в орбе 5° между ключевыми сигнификаторами.';
@@ -1176,11 +1225,13 @@ function renderResults(container, input, chart) {
     const aspectRows = chart.aspects.map((aspect) => [
         aspect.planetA,
         aspect.planetB,
-        aspect.type,
-        formatDegrees(aspect.orb)
+        getAspectLabel(aspect.type),
+        formatDegrees(aspect.orb),
+        aspect.applying ? 'Сходящийся' : 'Расходящийся',
+        `${aspect.polarity} (${getAspectPolarityLabel(aspect.polarity)})`
     ]);
     const aspectsContent = aspectRows.length
-        ? createTable(['Планета A', 'Планета B', 'Аспект', 'Орб'], aspectRows)
+        ? createTable(['Планета A', 'Планета B', 'Аспект', 'Орб', 'Фаза', 'Знак'], aspectRows)
         : (() => {
             const empty = document.createElement('div');
             empty.textContent = 'Нет мажорных аспектов в орбе 5°.';
@@ -1192,7 +1243,8 @@ function renderResults(container, input, chart) {
     note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома. ' +
         'Эссенциальные: обитель/экзальтация/изгнание/падение, без термов и фасов. ' +
         `Сожжение до ${COMBUST_ORB}°, в лучах до ${UNDER_BEAMS_ORB}°, казими до ${CAZIMI_ORB.toFixed(2)}°. ` +
-        `Стационарность при |скорости| ≤ ${STATIONARY_THRESHOLD}°/день.`;
+        `Стационарность при |скорости| ≤ ${STATIONARY_THRESHOLD}°/день. ` +
+        'Знак аспекта: + (секстиль/трин), - (квадрат/оппозиция), 0 (соединение).';
     const noteSection = createSection('Примечания', note);
 
     container.appendChild(summary);
