@@ -159,6 +159,108 @@ const SIGN_OPPOSITES = {
     Pisces: 'Virgo'
 };
 
+const PTOLEMY_TERMS = {
+    Aries: [
+        { end: 6, ruler: 'Jupiter' },
+        { end: 14, ruler: 'Venus' },
+        { end: 21, ruler: 'Mercury' },
+        { end: 26, ruler: 'Mars' },
+        { end: 30, ruler: 'Saturn' }
+    ],
+    Taurus: [
+        { end: 8, ruler: 'Venus' },
+        { end: 15, ruler: 'Mercury' },
+        { end: 22, ruler: 'Jupiter' },
+        { end: 27, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Gemini: [
+        { end: 7, ruler: 'Mercury' },
+        { end: 14, ruler: 'Jupiter' },
+        { end: 21, ruler: 'Venus' },
+        { end: 25, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Cancer: [
+        { end: 7, ruler: 'Mars' },
+        { end: 13, ruler: 'Venus' },
+        { end: 19, ruler: 'Mercury' },
+        { end: 26, ruler: 'Jupiter' },
+        { end: 30, ruler: 'Saturn' }
+    ],
+    Leo: [
+        { end: 6, ruler: 'Jupiter' },
+        { end: 13, ruler: 'Venus' },
+        { end: 20, ruler: 'Mercury' },
+        { end: 27, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Virgo: [
+        { end: 7, ruler: 'Mercury' },
+        { end: 13, ruler: 'Venus' },
+        { end: 18, ruler: 'Jupiter' },
+        { end: 24, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Libra: [
+        { end: 6, ruler: 'Saturn' },
+        { end: 14, ruler: 'Venus' },
+        { end: 21, ruler: 'Jupiter' },
+        { end: 28, ruler: 'Mercury' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Scorpio: [
+        { end: 7, ruler: 'Mars' },
+        { end: 13, ruler: 'Venus' },
+        { end: 19, ruler: 'Mercury' },
+        { end: 24, ruler: 'Jupiter' },
+        { end: 30, ruler: 'Saturn' }
+    ],
+    Sagittarius: [
+        { end: 12, ruler: 'Jupiter' },
+        { end: 17, ruler: 'Venus' },
+        { end: 21, ruler: 'Mercury' },
+        { end: 26, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Capricorn: [
+        { end: 7, ruler: 'Mercury' },
+        { end: 14, ruler: 'Jupiter' },
+        { end: 22, ruler: 'Venus' },
+        { end: 26, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Aquarius: [
+        { end: 7, ruler: 'Mercury' },
+        { end: 13, ruler: 'Venus' },
+        { end: 20, ruler: 'Jupiter' },
+        { end: 25, ruler: 'Saturn' },
+        { end: 30, ruler: 'Mars' }
+    ],
+    Pisces: [
+        { end: 12, ruler: 'Venus' },
+        { end: 19, ruler: 'Jupiter' },
+        { end: 24, ruler: 'Mercury' },
+        { end: 27, ruler: 'Mars' },
+        { end: 30, ruler: 'Saturn' }
+    ]
+};
+
+const PTOLEMY_FACES = {
+    Aries: ['Mars', 'Sun', 'Venus'],
+    Taurus: ['Mercury', 'Moon', 'Saturn'],
+    Gemini: ['Jupiter', 'Mars', 'Sun'],
+    Cancer: ['Venus', 'Mercury', 'Moon'],
+    Leo: ['Saturn', 'Jupiter', 'Mars'],
+    Virgo: ['Sun', 'Venus', 'Mercury'],
+    Libra: ['Moon', 'Saturn', 'Jupiter'],
+    Scorpio: ['Mars', 'Sun', 'Venus'],
+    Sagittarius: ['Mercury', 'Moon', 'Saturn'],
+    Capricorn: ['Jupiter', 'Mars', 'Sun'],
+    Aquarius: ['Venus', 'Mercury', 'Moon'],
+    Pisces: ['Saturn', 'Jupiter', 'Mars']
+};
+
 const STATIONARY_THRESHOLD = 0.1;
 const CAZIMI_ORB = 17 / 60;
 const COMBUST_ORB = 8.5;
@@ -480,6 +582,28 @@ function oppositeSign(sign) {
     return SIGN_OPPOSITES[sign];
 }
 
+function getTermRuler(sign, degree) {
+    const terms = PTOLEMY_TERMS[sign];
+    if (!terms) {
+        return null;
+    }
+    for (let i = 0; i < terms.length; i += 1) {
+        if (degree <= terms[i].end) {
+            return terms[i].ruler;
+        }
+    }
+    return terms[terms.length - 1].ruler;
+}
+
+function getFaceRuler(sign, degree) {
+    const faces = PTOLEMY_FACES[sign];
+    if (!faces) {
+        return null;
+    }
+    const index = Math.min(2, Math.max(0, Math.floor(degree / 10)));
+    return faces[index];
+}
+
 function getHouseStrength(house) {
     if ([1, 4, 7, 10].includes(house)) {
         return 'Угловая';
@@ -509,22 +633,38 @@ function getEssentialDignity(planetName, lon) {
     return { status: 'Без достоинств', sign };
 }
 
-function getReceptionType(sign, planetName) {
+function formatRulerCell(planetName, ruler) {
+    if (!ruler) {
+        return '—';
+    }
+    return planetName === ruler ? `${ruler} (свой)` : ruler;
+}
+
+function getReceptionTypes(sign, degree, planetName) {
+    const types = [];
     const domiciles = DOMICILES[planetName] || [];
     const exaltation = EXALTATIONS[planetName] || null;
     if (domiciles.includes(sign)) {
-        return 'Обитель';
+        types.push('Обитель');
     }
     if (exaltation === sign) {
-        return 'Экзальтация';
+        types.push('Экзальтация');
     }
     if (domiciles.some((domicile) => oppositeSign(domicile) === sign)) {
-        return 'Изгнание';
+        types.push('Изгнание');
     }
     if (exaltation && oppositeSign(exaltation) === sign) {
-        return 'Падение';
+        types.push('Падение');
     }
-    return 'Нет';
+    const termRuler = getTermRuler(sign, degree);
+    if (termRuler === planetName) {
+        types.push('Терм');
+    }
+    const faceRuler = getFaceRuler(sign, degree);
+    if (faceRuler === planetName) {
+        types.push('Фас');
+    }
+    return types.length ? types : ['Нет'];
 }
 
 function angularDistance(a, b) {
@@ -912,17 +1052,17 @@ function buildAllReceptionRows(planets) {
         for (let j = i + 1; j < planets.length; j += 1) {
             const planetA = planets[i];
             const planetB = planets[j];
-            const signA = longitudeToSign(planetA.longitude).sign;
-            const signB = longitudeToSign(planetB.longitude).sign;
-            const typeAB = getReceptionType(signA, planetB.name);
-            const typeBA = getReceptionType(signB, planetA.name);
-            const mutual = typeAB !== 'Нет' && typeBA !== 'Нет' ? 'Да' : 'Нет';
+            const signAInfo = longitudeToSign(planetA.longitude);
+            const signBInfo = longitudeToSign(planetB.longitude);
+            const typeAB = getReceptionTypes(signAInfo.sign, signAInfo.deg, planetB.name);
+            const typeBA = getReceptionTypes(signBInfo.sign, signBInfo.deg, planetA.name);
+            const mutual = typeAB[0] !== 'Нет' && typeBA[0] !== 'Нет' ? 'Да' : 'Нет';
             rows.push([
                 `${planetA.name} ↔ ${planetB.name}`,
-                signA,
-                typeAB,
-                signB,
-                typeBA,
+                signAInfo.sign,
+                typeAB.join(', '),
+                signBInfo.sign,
+                typeBA.join(', '),
                 mutual
             ]);
         }
@@ -1135,7 +1275,10 @@ function renderResults(container, input, chart) {
     const planetMap = new Map(chart.planets.map((planet) => [planet.name, planet]));
     const sunLon = planetMap.get('Sun') ? planetMap.get('Sun').longitude : null;
     const dignityRows = chart.planets.map((planet) => {
+        const signInfo = longitudeToSign(planet.longitude);
         const essential = getEssentialDignity(planet.name, planet.longitude);
+        const termRuler = getTermRuler(signInfo.sign, signInfo.deg);
+        const faceRuler = getFaceRuler(signInfo.sign, signInfo.deg);
         const houseStrength = getHouseStrength(planet.house);
         const sunCondition = sunLon !== null ? getSunCondition(planet.name, planet.longitude, sunLon) : '—';
         const debilities = [];
@@ -1154,6 +1297,8 @@ function renderResults(container, input, chart) {
         return [
             planet.name,
             essential.status,
+            formatRulerCell(planet.name, termRuler),
+            formatRulerCell(planet.name, faceRuler),
             houseStrength,
             planet.motionStatus.label,
             `${formatSignedDegrees(planet.dailyMotion)}/день`,
@@ -1164,7 +1309,7 @@ function renderResults(container, input, chart) {
     const dignitySection = createSection(
         'Достоинства и поражения',
         createTable(
-            ['Планета', 'Эссенц.', 'Акцидент.', 'Движение', 'Скорость', 'Солнце', 'Поражения'],
+            ['Планета', 'Эссенц.', 'Терм', 'Фас', 'Акцидент.', 'Движение', 'Скорость', 'Солнце', 'Поражения'],
             dignityRows
         )
     );
@@ -1241,7 +1386,7 @@ function renderResults(container, input, chart) {
 
     const note = document.createElement('div');
     note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома. ' +
-        'Эссенциальные: обитель/экзальтация/изгнание/падение, без термов и фасов. ' +
+        'Эссенциальные: обитель/экзальтация/изгнание/падение + термы/фасы (Птолемей). ' +
         `Сожжение до ${COMBUST_ORB}°, в лучах до ${UNDER_BEAMS_ORB}°, казими до ${CAZIMI_ORB.toFixed(2)}°. ` +
         `Стационарность при |скорости| ≤ ${STATIONARY_THRESHOLD}°/день. ` +
         'Знак аспекта: + (секстиль/трин), - (квадрат/оппозиция), 0 (соединение).';
