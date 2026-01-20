@@ -606,6 +606,24 @@ function summarizePolarity(symbols) {
     return summary;
 }
 
+function buildPolarityVerdict(primarySummary, fallbackSummary) {
+    const usePrimary = primarySummary.total > 0;
+    const summary = usePrimary ? primarySummary : fallbackSummary;
+    const scope = usePrimary ? 'ключевым аспектам' : 'всем аспектам';
+    if (summary.total === 0) {
+        return {
+            scope,
+            summary,
+            text: 'Итог: аспектов в орбе 5° нет, вывод по знаку аспектов сделать нельзя.'
+        };
+    }
+    return {
+        scope,
+        summary,
+        text: `Итог по ${scope}: ${summary.verdict}.`
+    };
+}
+
 function oppositeSign(sign) {
     return SIGN_OPPOSITES[sign];
 }
@@ -1432,12 +1450,18 @@ function renderResults(container, input, chart) {
     ];
     const allPolaritySection = createSection('Баланс всех аспектов', createTable(['Поле', 'Значение'], allPolarityRows, 'kv-table'));
 
+    const finalVerdict = buildPolarityVerdict(keyAspectData.summary, allPolaritySummary);
+    const verdictBody = document.createElement('div');
+    verdictBody.textContent = finalVerdict.text;
+    const verdictSection = createSection('Итог по знаку аспектов', verdictBody);
+
     const note = document.createElement('div');
     note.textContent = 'Примечание: Regiomontanus, орб 5°, высшие планеты исключены, Frawley + производные дома. ' +
         'Эссенциальные: обитель/экзальтация/изгнание/падение + термы/фасы (Птолемей). ' +
         `Сожжение до ${COMBUST_ORB}°, в лучах до ${UNDER_BEAMS_ORB}°, казими до ${CAZIMI_ORB.toFixed(2)}°. ` +
         `Стационарность при |скорости| ≤ ${STATIONARY_THRESHOLD}°/день. ` +
-        'Знак аспекта: + (секстиль/трин), - (квадрат/оппозиция), 0 (соединение).';
+        'Знак аспекта: + (секстиль/трин), - (квадрат/оппозиция), 0 (соединение). ' +
+        'Итог по знаку аспектов не учитывает достоинства и рецепции.';
     const noteSection = createSection('Примечания', note);
 
     container.appendChild(summary);
@@ -1452,6 +1476,7 @@ function renderResults(container, input, chart) {
     container.appendChild(keyPolaritySection);
     container.appendChild(aspectsSection);
     container.appendChild(allPolaritySection);
+    container.appendChild(verdictSection);
     container.appendChild(noteSection);
 }
 
